@@ -132,7 +132,7 @@ class RdmaTestCase implements ShouldQueue
             $rdma_ipv4_client=$rdmaTest[0]['client_card_ipv4_addr'];
             $rdma_mac_addr_client=$rdmaTest[0]['client_card_mac_addr'];
 
-            $test_file_name="\/tmp\/".$test_pair_id.$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep.$direction_name.$sep;
+            $test_file_name="\/tmp\/".$test_pair_id."_mm".$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep.$direction_name.$sep;
             
             switch ($this->cmd) {
                 case 'ib_atomic_bw':
@@ -175,8 +175,8 @@ class RdmaTestCase implements ShouldQueue
                     break;
             }
 
-            $command_server=$command_check_server.' 2>&1 >'.$test_file_name.'server'.' &';
-            $command_client=$command_check_client.' 2>&1 >'.$test_file_name.'client'.' &';
+            $command_server=$command_check_server.' 2>&1 >'.$test_file_name.'server.log'.' &';
+            $command_client=$command_check_client.' 2>&1 >'.$test_file_name.'client.log'.' &';
 
             $time_start=microtime(true);
             $ssh_client_server->exec($command_server);            

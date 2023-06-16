@@ -5,7 +5,7 @@
         <el-button type="primary" icon="UploadFilled" @click="initGetResult" :disabled="flag" >{{$t('rdmaTest.refreshBtn')}}</el-button>
     </el-form-item>
     <el-card class="box-card">
-        <el-table ref="multipleTableRef" :data="tableData" stripe fit style="width: 100%" size="small" :default-sort="{ prop: 'card_name', order: 'descending' }">
+        <el-table ref="multipleTableRef" :data="tableData" style="width: 100%" max-height="1000" size="small" :default-sort="{ prop: 'card_name', order: 'descending' }">
             <el-table-column 
                 v-for="(op,index) in testOptions" 
                 :key="index" 
@@ -18,11 +18,14 @@
                 <template v-slot="{row}" v-if="op.prop==='card_state'">
                     <el-switch v-model="row.card_state" :active-value=1 :inactive-value=0 :disabled="true" :v-if="row.card_state"/>
                 </template>
-                <template v-slot="{row}" v-else-if="op.prop==='action'">
-                    <el-button type="primary" size="small" icon="Edit" @click="handleChange(row)" :disabled="flag"></el-button>
+                <template v-slot="{row}" v-else-if="op.prop==='bidirection'">
+                    <div>{{`${row.bidirection=='2'?"unidirection":"bidirection"}`}}</div>
                 </template>
-                <template v-slot="{row}" v-else-if="op.prop==='update_time'">
-                    <div>{{`${row.update_time}`}}</div>
+                <template v-slot="{row}" v-else-if="op.prop.includes('flag')">
+                    <div>{{`${row[op.prop]=='0'?"not test":row[op.prop]=='1'?"not finish":row[op.prop]=='2'?"success":"fail"}`}}</div>
+                </template>
+                <template v-slot="{row}" v-else-if="op.prop.includes('costtime')">
+                    <div>{{`${row[op.prop]===null?"":row[op.prop].toFixed(4)}`}}</div>
                 </template>
             </el-table-column>
         </el-table>
@@ -54,9 +57,10 @@
             const initGetResult=async()=>{
                 const res=await getResult(testForm)
                 if(res.opCode){
-                    tableData.value=res.records
+                    tableData.value=res.record
                     total.value=res.total
                     console.log(res.record);
+                    console.log('tableData:',tableData.value);
                 }
             }
 

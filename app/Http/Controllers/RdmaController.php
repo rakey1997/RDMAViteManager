@@ -13,6 +13,7 @@ use App\Models\Model\RdmaParaModel;
 use App\Models\Model\ViewCardModel;
 use App\Models\Model\ViewRdmaInfoModel;
 use App\Models\Model\ViewRdmaParaModel;
+use App\Models\Model\RdmaTestRelationModel;
 use App\Models\Model\RdmaTestModel;
 use App\Models\Model\ViewRdmaTestModel;
 use phpseclib3\Net\SSH2;
@@ -785,10 +786,10 @@ class RdmaController extends Controller
         return $jsonArr;
     }
 
-    protected function addTQ(Request $request){
+    protected function testTQ(Request $request){
         $jsonArr=array();
         $host_Info=new HostModel();
-        $rdma_test_Info=new RdmaTestModel();
+        $rdma_test_relation=new RdmaTestRelationModel();
 
         $data=$request->input();
         $server_info=$data['server'];
@@ -856,18 +857,14 @@ class RdmaController extends Controller
                 $cmd_res=$ssh_client_client->read();
                 $result_valid=stripos($cmd_res,"3 iters in");
                 if($result_valid!==false) {
-                    $res=$rdma_test_Info->create([
-                        "bidirection"=>$data['birections']?3:2, 
+                    $res=$rdma_test_relation->create([
                         "test_pair_id"=>$data['test_pair_id'], 
                         "rdma_id_server"=>$rdma_info_server[0],
                         "rdma_id_client"=>$rdma_info_client[0],
                     ])->save();
                     if ($res==1){
                         $jsonArr['opCode']=true;
-                        $jsonArr['msg']='add test pair info success';
-                    }else{
-                        $jsonArr['opCode']=false;
-                        $jsonArr['msg']='add test pair info fail';
+                        $jsonArr['msg']='Test Pair Connect Success';
                     }
                 }else{
                     $jsonArr['opCode']=false;
@@ -879,6 +876,67 @@ class RdmaController extends Controller
         }
     }
 
+    protected function addTQ(Request $request){
+        $jsonArr=array();
+        $rdma_test_Info=new RdmaTestModel();
+        $rdma_test_relation=new RdmaTestRelationModel();
+
+        $data=$request->input();
+
+        $jsonArr['opCode']=false;
+        $jsonArr['result']='Add Test Pair Fail';
+        $jsonArr['msg']='add test pair info fail';
+
+        $rdma_sendbw_flag=in_array('ib_send_bw',$data['testItems'])?1:0;
+        $rdma_readbw_flag=in_array('ib_read_bw',$data['testItems'])?1:0;
+        $rdma_writebw_flag=in_array('ib_write_bw',$data['testItems'])?1:0;
+        $rdma_atomicbw_flag=in_array('ib_atomic_bw',$data['testItems'])?1:0;
+        $rdma_ethernetbw_flag=in_array('raw_ethernet_bw',$data['testItems'])?1:0;
+
+        $rdma_sendlat_flag=in_array('ib_send_lat',$data['testItems'])?1:0;
+        $rdma_readlat_flag=in_array('ib_read_lat',$data['testItems'])?1:0;
+        $rdma_writelat_flag=in_array('ib_write_lat',$data['testItems'])?1:0;
+        $rdma_atomiclat_flag=in_array('ib_atomic_lat',$data['testItems'])?1:0;
+        $rdma_ethernetlat_flag=in_array('raw_ethernet_lat',$data['testItems'])?1:0;
+
+        $flag=1;
+        foreach($data['testHosts'] as $test_pair_id){
+            $test_relation=$rdma_test_relation->where('test_pair_id',$test_pair_id)->select('rdma_id_server','rdma_id_client')->get()->toArray();
+            for($no=1;$no<=$data['testCount'];$no++){
+                $res=$rdma_test_Info->create([
+                    "bidirection"=>$data['directions']?3:2, 
+                    "test_pair_id"=>$test_pair_id, 
+                    "test_count_no"=>$no, 
+                    "rdma_id_server"=>$test_relation[0]['rdma_id_server'],
+                    "rdma_id_client"=>$test_relation[0]['rdma_id_client'],
+                    "test_queue"=>$data['testQueue'],
+                    "test_queue_flag"=>"0",
+                    "rdma_sendbw_flag"=>$rdma_sendbw_flag,
+                    "rdma_readbw_flag"=>$rdma_readbw_flag,
+                    "rdma_writebw_flag"=>$rdma_writebw_flag,
+                    "rdma_atomicbw_flag"=>$rdma_atomicbw_flag,
+                    "rdma_ethernetbw_flag"=>$rdma_ethernetbw_flag,
+                    "rdma_sendlat_flag"=>$rdma_sendlat_flag,
+                    "rdma_readlat_flag"=>$rdma_readlat_flag,
+                    "rdma_writelat_flag"=>$rdma_writelat_flag,
+                    "rdma_atomiclat_flag"=>$rdma_atomiclat_flag,
+                    "rdma_ethernetlat_flag"=>$rdma_ethernetlat_flag,
+                ])->save();
+                if ($res==1){
+                    $flag++;
+                }
+                $flag--;
+            }
+        }
+
+        if ($flag==1){
+            $jsonArr['opCode']=true;
+            $jsonArr['result']='Add Test Pair Success';
+            $jsonArr['msg']='add test pair info success';
+        }
+        return $jsonArr;
+    }
+
     protected function deleteTQ($ids){
         $jsonArr=array();
         $rdma_test_Info=new RdmaTestModel();
@@ -887,14 +945,16 @@ class RdmaController extends Controller
         $TQ_list=array();
 
         foreach ($TQ_Ids as $TQ_Id){
-            $TQ_match=$rdma_test_Info->where('test_pair_id',$TQ_Id)->get()->toArray();
+            $TQ_match=$rdma_test_Info->where('test_pair_id',"like","%".(string)$TQ_Id."%")->get()->toArray();
             if (empty($TQ_match)){
                 return response()->json(
                     ['message' => 'No '.$TQ_Id.' Test Pair Record not found.']
                 , 404);
                 $flag=true;
             }else{
-                array_push($TQ_list,$TQ_match[0]['id']);
+                foreach ($TQ_match as $TQ_each){
+                    array_push($TQ_list,$TQ_each['id']);
+                }
             }
         }
         if ($flag){
@@ -921,114 +981,27 @@ class RdmaController extends Controller
         $data=$request->input();
         $TQ_info=$data['testHosts'];
         $TQ_Items=$data['testItems'];
+        $test_times=$data['testCount'];
+        $test_queue=$data['testQueue'];
 
-        // var_dump($TQ_info);
-        // var_dump($TQ_Items);
-        // foreach ($TQ_info as $TQ_id){
-        //     $rdmaTest=$rdma_test_Info->where('test_pair_id',$TQ_id)->get();
-        //     // $direction_flag=$rdmaTest[0]['bidirection']==2?" ":" -b ";  //是否rdma双向测试，2为单向测试，3为双向测试
-        //     $direction_flag=$rdmaTest[0]['bidirection']==2?" -b ":" ";  //是否rdma双向测试，2为单向测试，3为双向测试
 
-        //     $test_file_name="/tmp/333_";
-        //     $test_pair_id=$rdmaTest[0]['test_pair_id'];
-        //     $sep="_";
-
-        //     $host_name_server=$rdmaTest[0]['server_host_name'];
-        //     $host_ip_server=$rdmaTest[0]['server_host_ip'];
-        //     $host_ssh_port_server=$rdmaTest[0]['server_host_ssh_port'];
-        //     $host_login_user_server=$rdmaTest[0]['server_host_login_user'];
-        //     $password_server=$rdmaTest[0]['server_host_login_password'];
-        //     $ssh_client_server = new SSH2($host_ip_server,$host_ssh_port_server);
-
-        //     $host_name_client=$rdmaTest[0]['client_host_name'];
-        //     $host_ip_client=$rdmaTest[0]['client_host_ip'];
-        //     $host_ssh_port_client=$rdmaTest[0]['client_host_ssh_port'];
-        //     $host_login_user_client=$rdmaTest[0]['client_host_login_user'];
-        //     $password_client=$rdmaTest[0]['client_host_login_password'];
-        //     $ssh_client_client = new SSH2($host_ip_client,$host_ssh_port_client);
-
-        //     $rdma_name_server=$rdmaTest[0]['server_ifname'];
-        //     $rdma_ipv4_server=$rdmaTest[0]['server_card_ipv4_addr'];
-        //     $rdma_gid_server=$rdmaTest[0]['server_gid'];
-
-        //     $rdma_name_client=$rdmaTest[0]['client_ifname'];
-        //     $rdma_ipv4_client=$rdmaTest[0]['client_card_ipv4_addr'];
-        //     $rdma_gid_client=$rdmaTest[0]['client_gid'];
-
-        //     $verify_server=$this->sshConnVerify($ssh_client_server,$host_ip_server,$host_ssh_port_server,$host_login_user_server,$password_server);
-        //     $verify_client=$this->sshConnVerify($ssh_client_client,$host_ip_client,$host_ssh_port_client,$host_login_user_client,$password_client);
-
-        //     // $command_server="ibv_rc_pingpong -d pclr_0 -g 1 >".$test_file_name."server";
-        //     $command_server='ib_send_bw -a -R -F -d '.$rdma_name_server.' --report_gbits -q 10'.$direction_flag." >".$test_file_name."server"." &";
-        //     // $command_server="ibv_rc_pingpong -d pclr_0 -g 1 &";
-        //     // $command_client="ibv_rc_pingpong -d pclr_0 -g 1 10.10.10.10 >".$test_file_name."client";
-        //     $command_client='ib_send_bw -a -R -F -d '.$rdma_name_client.' --report_gbits -q 10'.$direction_flag.$rdma_ipv4_server." >".$test_file_name."client";
-        //     // $command_client="ibv_rc_pingpong -d pclr_0 -g 1 10.10.10.10";
-            
-        //     $command_check="ps -ef|grep 'ib_send_bw'|wc -l";
-        //     // $command_check="jobs -l";
-        //     var_dump($command_server);
-        //     var_dump($command_client);
-        //     // jobs -p
-        //     $ssh_client_server->disablePTY();
-        //     $ssh_client_server->exec($command_server);
-        //     // $ssh_client_server->setTimeout(140);
-        //     $a=$ssh_client_server->exec($command_check);
-        //     $b="first";
-        //     $ssh_client_client->disablePTY();
-        //     $b=$ssh_client_client->exec($command_client,function($str) {
-        //         // if (strpos($str, 'iter') !== false) {
-        //         //     $b= "find the iter word";
-        //         //     var_dump('bb:'.$str);
-        //         //     return $b;
-        //         if (stripos($str, 'Mpps') !== false) {
-        //             $b= "find the iter word";
-        //             var_dump('bb:'.$str);
-        //             return $b;
-        //         }else{
-        //             $b= "didn;t find the iter word";
-        //             var_dump("not come int");
-        //             return $b;
-        //         }
-        //     });
-        //     // $ssh_client_client->setTimeout(140);
-        //     // while(1){
-        //     //     sleep(4);
-
-        //     //     // $job_finished_client=$ssh_client_client->exec($command_check);
-    
-        //     //     // $ssh_client_server->exec($command_check);
-        //     //     // $ssh_client_client->exec($command_check);
-    
-        //         var_dump("a:".$a);
-        //         var_dump("getExitStatus_server:".$ssh_client_server->getExitStatus());
-        //         var_dump("b:".$b);
-        //         var_dump("getExitStatus_client:".$ssh_client_client->getExitStatus());
-        //     //     // var_dump("job_finished_server:".$job_finished_server);
-        //     //     // var_dump("job_finished_client:".$job_finished_client);
-
-        //     //     if($a ||$b){
-        //     //         var_dump("a:".$a);
-        //     //         var_dump("b:".$b);
-        //     //         var_dump("job_finished_server_last:".$ssh_client_server->getExitStatus());
-        //     //         // var_dump("job_finished_client_last:".$job_finished_client);
-        //     //         break;
-        //     //     }
-        //     // }
-
-        //     // var_dump("job_finished_server1:".$ssh_client_server->read());
-        //     // var_dump("job_finished_client1:".$job_finished_client->read());
-        // }
         foreach ($TQ_info as $TQ_id){
-            foreach ($TQ_Items as $TQ_Item){
-                $rdmaTest=$rdma_test_Info->where('test_pair_id',$TQ_id)->get();
-                // var_dump($rdmaTest);
-                RdmaTestCase::dispatch($TQ_Item,$rdmaTest)->onQueue($TQ_id); 
-                // Artisan::queue('RdmaTestCase', [
-                //     '--queue' => $TQ_id
-                // ])->onConnection('database')->onQueue($TQ_id)->dispatch($rdmaTest); 
+            for($test_no=1;$test_no<=$test_times;$test_no++){
+                $test_pair_id=(string)$TQ_id."_".(string)$test_no;
+                $rdmaTest=$rdma_test_Info->where('test_pair_id',$test_pair_id)->get();
+                foreach ($TQ_Items as $TQ_Item){
+                    RdmaTestCase::dispatch($TQ_Item,$rdmaTest)->onQueue($test_queue); 
+                    // Artisan::queue('RdmaTestCase', [
+                    //     '--queue' => $TQ_id
+                    // ])->onConnection('database')->onQueue($TQ_id)->dispatch($rdmaTest); 
+                }
             }
         }
+
+        $jsonArr['opCode']=true;
+        $jsonArr['msg']='put test queue successfully';
+        return $jsonArr;
+
     }
 
     protected function returnTestResult(Request $request){
@@ -1039,12 +1012,11 @@ class RdmaController extends Controller
         $TQ_info=$data['testHosts'];
         $TQ_Items=$data['testItems'];
 
-        // var_dump($TQ_info);
-
-        $record=$rdma_test_Info->where('test_pair_id',$TQ_info)->get()->toArray();
-        // foreach ($TQ_info as $TQ_id){
-                
-        // }
+        $record=$rdma_test_Info->where('test_pair_id',$TQ_info)->select('test_pair_id','test_count_no','test_queue','test_queue_flag','bidirection','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
+        'client_host_name','client_card_name','client_card_ipv4_addr','client_card_mac_addr','client_ifname','client_gid','rdma_sendbw_flag','rdma_sendbw_costtime',
+        'rdma_readbw_flag','rdma_readbw_costtime','rdma_writebw_flag','rdma_writebw_costtime','rdma_atomicbw_flag','rdma_atomicbw_costtime','rdma_ethernetbw_flag','rdma_ethernetbw_costtime',
+        'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',
+        'rdma_ethernetlat_flag','rdma_ethernetlat_costtime','update_time')->get()->toArray();
 
         $total=$rdma_test_Info->where('test_pair_id',$TQ_info)->count();
         if (!empty($record)){

@@ -6,14 +6,9 @@
         </el-form-item>
         <el-form-item :label="$t('rdmaTest.testClient')">
             <el-cascader v-model="form.client" :options="menu_options" :props="props" clearable separator="-->" />
-            <el-switch
-                v-model="form.birections"
-                :active-text="$t('rdmaTest.birections')"
-                :inactive-text="$t('rdmaTest.unidirection')">
-            </el-switch>
         </el-form-item>
         <el-form-item>
-            <el-button @click="testTQ">{{$t('rdmaTest.addTQ')}}</el-button>
+            <el-button @click="checkTQ">{{$t('rdmaTest.checkTQ')}}</el-button>
         </el-form-item>
     </el-form>
     <testDialog v-model="dialogVisible" 
@@ -31,20 +26,45 @@
         <el-button class="transfer-footer" type="danger" round :disabled="host.length==0" @click="deleteTestHost">{{$t('rdmaTest.delBtn')}}</el-button>
     </template>
     </el-transfer>
+    <el-form :model="form" label-width="100px">
+    <el-form-item :label="$t('rdmaTest.testCount')">
+            <el-input v-model.number="form.count" />
+        </el-form-item>
+        <el-form-item :label="$t('rdmaTest.directions')">
+            <el-select v-model="form.directions" placeholder="please select test dierection">
+                <el-option label="unidirection" :value=false />
+                <el-option label="birections" :value=true />
+            </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('rdmaTest.testQueue')">
+            <el-select v-model="form.testQueue" placeholder="please select test queue">
+                <el-option label="default" value="default" />
+                <el-option label="Queue One" value="QueueOne" />
+                <el-option label="Queue Two" value="QueueTwo" />
+            </el-select>
+        </el-form-item>
+    </el-form>
     <el-transfer
         :titles="titles"
         v-model="selectedTestItems"
         :data="data"
     />
     <el-form-item class="btn">
-        <el-button type="primary" icon="UploadFilled" @click="startTest" :disabled="(!selectedTestItems.length||flag)" >{{$t('rdmaTest.startTestBtn')}}</el-button>
+        <el-button type="primary" icon="UploadFilled" @click="addTestQueue" :disabled="(!toBeTestHostValue.length||!selectedTestItems.length||flag)" >{{$t('rdmaTest.addTestQueue')}}</el-button>
     </el-form-item>
+    <el-form-item class="btn">
+        <el-button type="primary" icon="UploadFilled" @click="delTestQueue" :disabled="(!toBeTestHostValue.length||!selectedTestItems.length||flag)" >{{$t('rdmaTest.delTestQueue')}}</el-button>
+    </el-form-item>
+    <el-form-item class="btn">
+        <el-button type="primary" icon="UploadFilled" @click="startTest" :disabled="(flag)" >{{$t('rdmaTest.startTestBtn')}}</el-button>
+    </el-form-item>
+
 </template>
 
 <script>
     import { reactive, ref } from '@vue/reactivity'
     import { watch } from '@vue/runtime-core';
-    import { getMenu,addTQ,delTQ,excuteTest } from "../../api/rdmaTest";
+    import { getMenu,addTQ,testTQ,delTQ,excuteTest } from "../../api/rdmaTest";
     import {useStore} from "vuex";
     import { useI18n } from "vue-i18n";
     import testDialog from "./components/testDialog.vue";
@@ -63,6 +83,9 @@
             let testForm={
                 "testHosts":[],
                 "testItems":[],
+                "directions":false,
+                "testCount":1,
+                "testQueue":"default",
             }
             let toBeDelHostValue = []
             const sep=','
@@ -81,9 +104,11 @@
 
             const form = reactive({
                     test_pair_id:0,
-                    birections:false,
+                    directions:false,
                     server: [],
                     client: [],
+                    count:1,
+                    testQueue:"default",
                     })
 
             const data=ref([
@@ -144,15 +169,36 @@
                 // console.log(toBeDelHostValue);
             }
             
+            const addTestQueue=async ()=>{
+                testForm.testHosts=toBeTestHostValue.value
+                testForm.testItems=selectedTestItems.value
+                testForm.directions=form.directions
+                testForm.testCount=form.count
+                testForm.testQueue=form.testQueue
+                console.log('testForm:',testForm);
+                const res=await addTQ(testForm)
+                store.dispatch('app/testForm',JSON.stringify(testForm))
+            }
+            const delTestQueue=async ()=>{
+                testForm.testHosts=toBeTestHostValue.value
+                testForm.testItems=selectedTestItems.value
+                testForm.testCount=form.count
+                testForm.testQueue=form.testQueue
+                // console.log('testForm:',testForm);
+                const res=await delTQ(testForm)
+                store.dispatch('app/testForm',JSON.stringify(testForm))
+            }
             const startTest=async ()=>{
                 testForm.testHosts=toBeTestHostValue.value
                 testForm.testItems=selectedTestItems.value
+                testForm.testCount=form.count
+                testForm.testQueue=form.testQueue
                 // console.log('testForm:',testForm);
                 const res=await excuteTest(testForm)
                 store.dispatch('app/testForm',JSON.stringify(testForm))
             }
 
-            const testTQ=async ()=>{
+            const checkTQ=async ()=>{
                 dialogTableValue.value={
                     opCode:true,
                     msg: t('rdmaTest.inTest'),
@@ -160,10 +206,10 @@
                 }
                 form.test_pair_id = Date.parse(new Date())/1000;
                 dialogVisible.value=true
-                const res=await addTQ(form)
+                const res=await testTQ(form)
                 
                 if(res.opCode){
-                    const keyValue=form.server[0]+sep+form.server[2]+"------"+form.client[0]+sep+form.client[2]+(form.birections?t('rdmaTest.birections'):t('rdmaTest.unidirection'))
+                    const keyValue=form.server[0]+sep+form.server[2]+"------"+form.client[0]+sep+form.client[2]+(form.directions?t('rdmaTest.birections'):t('rdmaTest.unidirection'))
                     host.value.unshift({key:form.test_pair_id,label:keyValue})
                     // console.log(host.value);
                     store.dispatch('app/testHostPair',JSON.stringify(host.value))
@@ -195,7 +241,7 @@
             const deleteTestHost=async ()=>{
                 // console.log(toBeDelHostValue);
 
-                const res=await delTQ(toBeDelHostValue)
+                // const res=await delTQ(toBeDelHostValue)
                 if(res.opCode){
                     toBeDelHostValue.forEach(detail => {
                     host.value=host.value.filter(item=>item.key!=detail)
@@ -286,10 +332,12 @@
                 props,
                 dialogVisible,
                 dialogTableValue,
+                addTestQueue,
+                delTestQueue,
                 startTest,
                 deleteTestHost,
                 handleSelect,
-                testTQ
+                checkTQ
             }
         },
     }

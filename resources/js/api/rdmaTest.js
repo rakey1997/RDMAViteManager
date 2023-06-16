@@ -7,6 +7,13 @@ export const getMenu = (params) => {
     });
 };
 
+export const testTQ = (data) => {
+    return request({
+        url: "/testTQ",
+        method: "post",
+        data,
+    });
+};
 export const addTQ = (data) => {
     return request({
         url: "/addTQ",
