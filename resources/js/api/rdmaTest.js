@@ -22,10 +22,11 @@ export const addTQ = (data) => {
     });
 };
 
-export const delTQ = (ids) => {
+export const delTQ = (data) => {
     return request({
-        url: `/TQ/${ids}`,
+        url: "/delTQ",
         method: "delete",
+        data,
     });
 };
 

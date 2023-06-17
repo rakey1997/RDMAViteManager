@@ -35,37 +35,37 @@ class RdmaTestCase implements ShouldQueue
         return true;
     }
 
-    public function updateTestResult($rdma_test_Info,$test_pair_id,$flag,$costtime){
+    public function updateTestResult($rdma_test_Info,$test_identifier,$test_pair_id,$flag,$costtime){
         switch($this->cmd){
             case "ib_send_bw":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_sendbw_flag'=>$flag,'rdma_sendbw_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_sendbw_flag'=>$flag,'rdma_sendbw_costtime'=>$costtime]);
                 break;
             case "ib_read_bw":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_readbw_flag'=>$flag,'rdma_readbw_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_readbw_flag'=>$flag,'rdma_readbw_costtime'=>$costtime]);
                 break;
             case "ib_write_bw":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_writebw_flag'=>$flag,'rdma_writebw_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_writebw_flag'=>$flag,'rdma_writebw_costtime'=>$costtime]);
                 break;
             case "ib_atomic_bw":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_atomicbw_flag'=>$flag,'rdma_atomicbw_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_atomicbw_flag'=>$flag,'rdma_atomicbw_costtime'=>$costtime]);
                 break;
             case "raw_ethernet_bw":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_ethernetbw_flag'=>$flag,'rdma_ethernetbw_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_ethernetbw_flag'=>$flag,'rdma_ethernetbw_costtime'=>$costtime]);
                 break;
             case "ib_send_lat":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_sendlat_flag'=>$flag,'rdma_sendlat_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_sendlat_flag'=>$flag,'rdma_sendlat_costtime'=>$costtime]);
                 break;
             case "ib_read_lat":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_readlat_flag'=>$flag,'rdma_readlat_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_readlat_flag'=>$flag,'rdma_readlat_costtime'=>$costtime]);
                 break;
             case "ib_write_lat":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_writelat_flag'=>$flag,'rdma_writelat_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_writelat_flag'=>$flag,'rdma_writelat_costtime'=>$costtime]);
                 break;
             case "ib_atomic_lat":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_atomiclat_flag'=>$flag,'rdma_atomiclat_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_atomiclat_flag'=>$flag,'rdma_atomiclat_costtime'=>$costtime]);
                 break;
             case "raw_ethernet_lat":
-                $res=$rdma_test_Info->where('test_pair_id',$test_pair_id)->update(['rdma_ethernetlat_flag'=>$flag,'rdma_ethernetlat_costtime'=>$costtime]);
+                $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_ethernetlat_flag'=>$flag,'rdma_ethernetlat_costtime'=>$costtime]);
                 break;
             default:
                 break;
@@ -83,27 +83,28 @@ class RdmaTestCase implements ShouldQueue
     {
         $rdma_test_Info=new RdmaTestModel();
         $rdmaTest=$this->rdmaTest;
-        $direction_flag=$rdmaTest[0]['bidirection']==2?" ":" -b ";  //是否rdma双向测试，2为单向测试，3为双向测试
-        $direction_name=$rdmaTest[0]['bidirection']==2?"undirection":"bidirection";  //是否rdma双向测试，2为单向测试，3为双向测试
+        $direction_flag=$rdmaTest['bidirection']==2?" ":" -b ";  //是否rdma双向测试，2为单向测试，3为双向测试
+        $direction_name=$rdmaTest['bidirection']==2?"undirection":"bidirection";  //是否rdma双向测试，2为单向测试，3为双向测试
 
         $qp_flag=stripos($this->cmd,"lat")!==false?" ":" -q 10";  //lat时延测试没有q参数
 
-        $test_pair_id=$rdmaTest[0]['test_pair_id'];
+        $test_identifier=$rdmaTest['test_identifier'];
+        $test_pair_id=$rdmaTest['test_pair_id'];
         $sep="_";
 
-        $host_name_server=$rdmaTest[0]['server_host_name'];
-        $host_ip_server=$rdmaTest[0]['server_host_ip'];
-        $host_ssh_port_server=$rdmaTest[0]['server_host_ssh_port'];
-        $host_login_user_server=$rdmaTest[0]['server_host_login_user'];
-        $password_server=$rdmaTest[0]['server_host_login_password'];
+        $host_name_server=$rdmaTest['server_host_name'];
+        $host_ip_server=$rdmaTest['server_host_ip'];
+        $host_ssh_port_server=$rdmaTest['server_host_ssh_port'];
+        $host_login_user_server=$rdmaTest['server_host_login_user'];
+        $password_server=$rdmaTest['server_host_login_password'];
         $ssh_client_server = new SSH2($host_ip_server,$host_ssh_port_server);
         $ssh_client_server_check = new SSH2($host_ip_server,$host_ssh_port_server);
 
-        $host_name_client=$rdmaTest[0]['client_host_name'];
-        $host_ip_client=$rdmaTest[0]['client_host_ip'];
-        $host_ssh_port_client=$rdmaTest[0]['client_host_ssh_port'];
-        $host_login_user_client=$rdmaTest[0]['client_host_login_user'];
-        $password_client=$rdmaTest[0]['client_host_login_password'];
+        $host_name_client=$rdmaTest['client_host_name'];
+        $host_ip_client=$rdmaTest['client_host_ip'];
+        $host_ssh_port_client=$rdmaTest['client_host_ssh_port'];
+        $host_login_user_client=$rdmaTest['client_host_login_user'];
+        $password_client=$rdmaTest['client_host_login_password'];
         $ssh_client_client = new SSH2($host_ip_client,$host_ssh_port_client);
         $ssh_client_client_check = new SSH2($host_ip_client,$host_ssh_port_client);
 
@@ -124,15 +125,15 @@ class RdmaTestCase implements ShouldQueue
             //birection -b
             // server ib_send_bw -a -R -F -d mlx5_2 -R --report_gbits -q 10
             // client ib_send_bw -a -R -F -d mlx5_0 -R --report_gbits -q 10 10.10.10.10
-            $rdma_name_server=$rdmaTest[0]['server_ifname'];
-            $rdma_ipv4_server=$rdmaTest[0]['server_card_ipv4_addr'];
-            $rdma_mac_addr_server=$rdmaTest[0]['server_card_mac_addr'];
+            $rdma_name_server=$rdmaTest['server_ifname'];
+            $rdma_ipv4_server=$rdmaTest['server_card_ipv4_addr'];
+            $rdma_mac_addr_server=$rdmaTest['server_card_mac_addr'];
 
-            $rdma_name_client=$rdmaTest[0]['client_ifname'];
-            $rdma_ipv4_client=$rdmaTest[0]['client_card_ipv4_addr'];
-            $rdma_mac_addr_client=$rdmaTest[0]['client_card_mac_addr'];
+            $rdma_name_client=$rdmaTest['client_ifname'];
+            $rdma_ipv4_client=$rdmaTest['client_card_ipv4_addr'];
+            $rdma_mac_addr_client=$rdmaTest['client_card_mac_addr'];
 
-            $test_file_name="\/tmp\/".$test_pair_id."_mm".$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep.$direction_name.$sep;
+            $test_file_name="\/tmp\/".$test_identifier.$sep.$test_pair_id.$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep.$direction_name.$sep;
             
             switch ($this->cmd) {
                 case 'ib_atomic_bw':
@@ -181,6 +182,7 @@ class RdmaTestCase implements ShouldQueue
             $time_start=microtime(true);
             $ssh_client_server->exec($command_server);            
             $ssh_client_client->exec($command_client);
+            $this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"1",0);  //开始测试
 
             while(1){
                 sleep(5);
@@ -194,14 +196,14 @@ class RdmaTestCase implements ShouldQueue
                 if($seconds>3600){
                     $ssh_client_server_check->exec("pkill -9 -f ".$command_check_server);
                     $ssh_client_client_check->exec("pkill -9 -f ".$command_check_client);
-                    $res=$this->updateTestResult($rdma_test_Info,trim($test_pair_id),"3",$seconds); //失败
+                    $res=$this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"3",$seconds); //失败
                     // $jsonArr['opCode']=$res;
                     // $jsonArr['msg']='test fail';
                     // throw new Exception('test fail, please check result');
                     // var_dump('test timeout, break');
                     break;
                 }else if($pid_check_server=="2" && $pid_check_client=="2" ){
-                    $res=$this->updateTestResult($rdma_test_Info,trim($test_pair_id),"2",$seconds); //成功
+                    $res=$this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"2",$seconds); //成功
                     // $jsonArr['opCode']=$res;
                     // $jsonArr['msg']='test success';
                     // var_dump('test finished, exit');

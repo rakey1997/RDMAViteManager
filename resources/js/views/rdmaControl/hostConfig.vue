@@ -6,6 +6,7 @@
                     clearable 
                     v-model="queryForm.query" 
                     :placeholder="$t('table.placeholder')" 
+                    v-on:keyup.enter="initGetHostsList"
                     >
                 </el-input>
             </el-col>

@@ -43,9 +43,7 @@ Route::middleware('WebToken')->group(function () {
 
     Route::post('/testTQ', [RdmaController::class,'testTQ']);
     Route::post('/addTQ', [RdmaController::class,'addTQ']);
-    Route::post('/testTQ', [RdmaController::class,'testTQ']);
-
-    Route::delete('/TQ/{id}', [RdmaController::class,'deleteTQ']);
+    Route::delete('/delTQ', [RdmaController::class,'deleteTQ']);
     Route::post('/excuteTest', [RdmaController::class,'excuteTest']);
     Route::post('/result', [RdmaController::class,'returnTestResult']);
 

@@ -61,7 +61,6 @@
           if (valid) {
             store.dispatch('app/login',loginForm)
             store.dispatch('app/testHostPair',JSON.stringify([]))
-            store.dispatch('app/testForm',JSON.stringify([]))
           }
         })
       }

@@ -903,14 +903,16 @@ class RdmaController extends Controller
         foreach($data['testHosts'] as $test_pair_id){
             $test_relation=$rdma_test_relation->where('test_pair_id',$test_pair_id)->select('rdma_id_server','rdma_id_client')->get()->toArray();
             for($no=1;$no<=$data['testCount'];$no++){
+                $test_identifier= date('YmdHis',time()).'_'.$no;
                 $res=$rdma_test_Info->create([
-                    "bidirection"=>$data['directions']?3:2, 
+                    "test_identifier"=>$test_identifier, 
                     "test_pair_id"=>$test_pair_id, 
                     "test_count_no"=>$no, 
+                    "bidirection"=>$data['directions']?3:2, 
                     "rdma_id_server"=>$test_relation[0]['rdma_id_server'],
                     "rdma_id_client"=>$test_relation[0]['rdma_id_client'],
                     "test_queue"=>$data['testQueue'],
-                    "test_queue_flag"=>"0",
+                    "test_queue_state"=>"0",
                     "rdma_sendbw_flag"=>$rdma_sendbw_flag,
                     "rdma_readbw_flag"=>$rdma_readbw_flag,
                     "rdma_writebw_flag"=>$rdma_writebw_flag,
@@ -937,18 +939,20 @@ class RdmaController extends Controller
         return $jsonArr;
     }
 
-    protected function deleteTQ($ids){
+    protected function deleteTQ(Request $request){
         $jsonArr=array();
-        $rdma_test_Info=new RdmaTestModel();
-        $flag=false;
-        $TQ_Ids=explode(',', $ids);
         $TQ_list=array();
+        $rdma_test_Info=new RdmaTestModel();
 
-        foreach ($TQ_Ids as $TQ_Id){
-            $TQ_match=$rdma_test_Info->where('test_pair_id',"like","%".(string)$TQ_Id."%")->get()->toArray();
+        $data=$request->input();
+        $flag=false;
+        $TQ_Info_List=$data['id_arr'];
+
+        foreach ($TQ_Info_List as $TQ_Info){
+            $TQ_match=$rdma_test_Info->where('test_identifier',$TQ_Info[0])->where('test_pair_id',$TQ_Info[1])->get()->toArray();
             if (empty($TQ_match)){
                 return response()->json(
-                    ['message' => 'No '.$TQ_Id.' Test Pair Record not found.']
+                    ['message' => 'Test_identifier '.$TQ_Info[0].'test_pair_id'.$TQ_Info[1].' Test Pair Record not found.']
                 , 404);
                 $flag=true;
             }else{
@@ -965,41 +969,81 @@ class RdmaController extends Controller
             $res=$rdma_test_Info->destroy($TQ_list);
             if ($res>=1){
                 $jsonArr['opCode']=true;
-                $jsonArr['msg']='delete success';
+                $jsonArr['result']='delete success';
             }else{
                 $jsonArr['opCode']=false;
-                $jsonArr['msg']='delete fail';
+                $jsonArr['result']='delete fail';
             }
             return $jsonArr;
         }
     }
 
+    private function unpackAndExcute($rdmaTestList){
+        foreach($rdmaTestList as $rdmaTest){
+            $test_queue=$rdmaTest['test_queue'];
+            // var_dump($rdmaTest);
+            $need_test_flag="1";
+            if($rdmaTest['rdma_sendbw_flag']==$need_test_flag){
+                $cmd='ib_send_bw';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_readbw_flag']==$need_test_flag){
+                $cmd='ib_read_bw';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_writebw_flag']==$need_test_flag){
+                $cmd='ib_write_bw';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_atomicbw_flag']==$need_test_flag){
+                $cmd='ib_atomic_bw';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_ethernetbw_flag']==$need_test_flag){
+                $cmd='raw_ethernet_bw';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_sendlat_flag']==$need_test_flag){
+                $cmd='ib_send_lat';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_readlat_flag']==$need_test_flag){
+                $cmd='ib_read_lat';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_writelat_flag']==$need_test_flag){
+                $cmd='ib_write_lat';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_atomiclat_flag']==$need_test_flag){
+                $cmd='ib_atomic_lat';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+            if($rdmaTest['rdma_ethernetlat_flag']==$need_test_flag){
+                $cmd='raw_ethernet_lat';
+                RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
+            }
+        }
+    }
+
     protected function excuteTest(Request $request){
         $jsonArr=array();
-        $rdma_test_Info=new ViewRdmaTestModel();
-
+        $view_rdma_test_Info=new ViewRdmaTestModel();
         $data=$request->input();
-        $TQ_info=$data['testHosts'];
-        $TQ_Items=$data['testItems'];
-        $test_times=$data['testCount'];
-        $test_queue=$data['testQueue'];
 
-
-        foreach ($TQ_info as $TQ_id){
-            for($test_no=1;$test_no<=$test_times;$test_no++){
-                $test_pair_id=(string)$TQ_id."_".(string)$test_no;
-                $rdmaTest=$rdma_test_Info->where('test_pair_id',$test_pair_id)->get();
-                foreach ($TQ_Items as $TQ_Item){
-                    RdmaTestCase::dispatch($TQ_Item,$rdmaTest)->onQueue($test_queue); 
-                    // Artisan::queue('RdmaTestCase', [
-                    //     '--queue' => $TQ_id
-                    // ])->onConnection('database')->onQueue($TQ_id)->dispatch($rdmaTest); 
-                }
+        $TQ_Info_List=$data['id_arr'];
+        if(empty($TQ_Info_List)){
+            $rdmaTestList=$view_rdma_test_Info->where('test_queue_state','0')->get()->toArray();
+            $this->unpackAndExcute($rdmaTestList);
+        }else{
+            foreach($TQ_Info_List as $TQ_Info){
+                $rdmaTestList=$view_rdma_test_Info->where('test_identifier',$TQ_Info[0])->where('test_pair_id',$TQ_Info[1])->where('test_queue_state','0')->get()->toArray();
+                $this->unpackAndExcute($rdmaTestList);
             }
         }
 
         $jsonArr['opCode']=true;
-        $jsonArr['msg']='put test queue successfully';
+        $jsonArr['result']='Add to Test Queue Successfully';
         return $jsonArr;
 
     }
@@ -1008,17 +1052,32 @@ class RdmaController extends Controller
         $jsonArr=array();
         $rdma_test_Info=new ViewRdmaTestModel();
 
-        $data=$request->input();
-        $TQ_info=$data['testHosts'];
-        $TQ_Items=$data['testItems'];
+        $queryItem=$request->input('query');
+        $pagenum=$request->input('pagenum');
+        $pagesize=$request->input('pagesize');
 
-        $record=$rdma_test_Info->where('test_pair_id',$TQ_info)->select('test_pair_id','test_count_no','test_queue','test_queue_flag','bidirection','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
-        'client_host_name','client_card_name','client_card_ipv4_addr','client_card_mac_addr','client_ifname','client_gid','rdma_sendbw_flag','rdma_sendbw_costtime',
-        'rdma_readbw_flag','rdma_readbw_costtime','rdma_writebw_flag','rdma_writebw_costtime','rdma_atomicbw_flag','rdma_atomicbw_costtime','rdma_ethernetbw_flag','rdma_ethernetbw_costtime',
-        'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',
-        'rdma_ethernetlat_flag','rdma_ethernetlat_costtime','update_time')->get()->toArray();
+        $skipNum=($pagenum-1)*$pagesize;
 
-        $total=$rdma_test_Info->where('test_pair_id',$TQ_info)->count();
+        if($queryItem==''){
+            $total=$rdma_test_Info->count();
+            $record=$record=$rdma_test_Info->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
+            'client_host_name','client_card_name','client_card_ipv4_addr','client_card_mac_addr','client_ifname','client_gid','rdma_sendbw_flag','rdma_sendbw_costtime',
+            'rdma_readbw_flag','rdma_readbw_costtime','rdma_writebw_flag','rdma_writebw_costtime','rdma_atomicbw_flag','rdma_atomicbw_costtime','rdma_ethernetbw_flag','rdma_ethernetbw_costtime',
+            'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',
+            'rdma_ethernetlat_flag','rdma_ethernetlat_costtime','update_time')->orderBy('update_time','desc')->skip($skipNum)->take($pagesize)->get()->toArray();
+        }else{
+            $total=$rdma_test_Info->where('test_identifier','like', '%'.$queryItem.'%')->count();
+            $record=$record=$rdma_test_Info->where('test_identifier','like','%'.$queryItem.'%')->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
+            'client_host_name','client_card_name','client_card_ipv4_addr','client_card_mac_addr','client_ifname','client_gid','rdma_sendbw_flag','rdma_sendbw_costtime',
+            'rdma_readbw_flag','rdma_readbw_costtime','rdma_writebw_flag','rdma_writebw_costtime','rdma_atomicbw_flag','rdma_atomicbw_costtime','rdma_ethernetbw_flag','rdma_ethernetbw_costtime',
+            'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',
+            'rdma_ethernetlat_flag','rdma_ethernetlat_costtime','update_time')->orderBy('update_time','desc')->skip($skipNum)->take($pagesize)->get()->toArray();
+        }
+
+        $jsonArr['pagenum']=$pagenum;
+        $jsonArr['pagesize']=$pagesize;
+        $jsonArr['total']=$total;
+
         if (!empty($record)){
             $jsonArr['record']=$record;
             $jsonArr['total']=$total;

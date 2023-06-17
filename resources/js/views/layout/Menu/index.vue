@@ -4,7 +4,7 @@
         background-color="#545c64"
         class="el-menu-vertical-demo"
         text-color="#fff"
-        :default-openeds="['1']"
+        :default-openeds="['1','2']"
         :collapse="!$store.getters.siderType"
         router
     >

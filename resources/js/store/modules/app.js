@@ -16,7 +16,6 @@ export default {
         rdmaname: localStorage.getItem("rdmaname") || "",
         cardRdmaName: localStorage.getItem("cardRdmaName") || "",
         testHostPair: localStorage.getItem("testHostPair") || [],
-        testForm: localStorage.getItem("testForm") || {},
     }),
     mutations: {
         setUserID(state, userid) {
@@ -56,10 +55,6 @@ export default {
         setTestHostPair(state, testHostPair) {
             state.testHostPair = testHostPair;
             localStorage.setItem("testHostPair", testHostPair);
-        },
-        setTestForm(state, testForm) {
-            state.testForm = testForm;
-            localStorage.setItem("testForm", testForm);
         },
     },
     actions: {
@@ -110,9 +105,6 @@ export default {
         },
         testHostPair({ commit }, testHostPair) {
             commit("setTestHostPair", testHostPair);
-        },
-        testForm({ commit }, testForm) {
-            commit("setTestForm", testForm);
         },
     },
 };

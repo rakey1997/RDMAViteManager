@@ -9,5 +9,4 @@ export default {
     hostRdmaList: (state) => state.app.rdmaname,
     cardRdmaList: (state) => state.app.cardRdmaName,
     testHostPair: (state) => state.app.testHostPair,
-    testForm: (state) => state.app.testForm,
 };

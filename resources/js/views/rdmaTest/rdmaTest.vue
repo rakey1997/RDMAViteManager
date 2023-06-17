@@ -52,19 +52,12 @@
     <el-form-item class="btn">
         <el-button type="primary" icon="UploadFilled" @click="addTestQueue" :disabled="(!toBeTestHostValue.length||!selectedTestItems.length||flag)" >{{$t('rdmaTest.addTestQueue')}}</el-button>
     </el-form-item>
-    <el-form-item class="btn">
-        <el-button type="primary" icon="UploadFilled" @click="delTestQueue" :disabled="(!toBeTestHostValue.length||!selectedTestItems.length||flag)" >{{$t('rdmaTest.delTestQueue')}}</el-button>
-    </el-form-item>
-    <el-form-item class="btn">
-        <el-button type="primary" icon="UploadFilled" @click="startTest" :disabled="(flag)" >{{$t('rdmaTest.startTestBtn')}}</el-button>
-    </el-form-item>
-
 </template>
 
 <script>
     import { reactive, ref } from '@vue/reactivity'
     import { watch } from '@vue/runtime-core';
-    import { getMenu,addTQ,testTQ,delTQ,excuteTest } from "../../api/rdmaTest";
+    import { getMenu,addTQ,testTQ} from "../../api/rdmaTest";
     import {useStore} from "vuex";
     import { useI18n } from "vue-i18n";
     import testDialog from "./components/testDialog.vue";
@@ -175,27 +168,18 @@
                 testForm.directions=form.directions
                 testForm.testCount=form.count
                 testForm.testQueue=form.testQueue
-                console.log('testForm:',testForm);
                 const res=await addTQ(testForm)
-                store.dispatch('app/testForm',JSON.stringify(testForm))
-            }
-            const delTestQueue=async ()=>{
-                testForm.testHosts=toBeTestHostValue.value
-                testForm.testItems=selectedTestItems.value
-                testForm.testCount=form.count
-                testForm.testQueue=form.testQueue
-                // console.log('testForm:',testForm);
-                const res=await delTQ(testForm)
-                store.dispatch('app/testForm',JSON.stringify(testForm))
-            }
-            const startTest=async ()=>{
-                testForm.testHosts=toBeTestHostValue.value
-                testForm.testItems=selectedTestItems.value
-                testForm.testCount=form.count
-                testForm.testQueue=form.testQueue
-                // console.log('testForm:',testForm);
-                const res=await excuteTest(testForm)
-                store.dispatch('app/testForm',JSON.stringify(testForm))
+                if(res.opCode){
+                    ElMessage({
+                        type: 'success',
+                        message: res.result,
+                    })
+                }else{
+                    ElMessage({
+                        type: 'error',
+                        message: res.result,
+                    })
+                }
             }
 
             const checkTQ=async ()=>{
@@ -239,24 +223,14 @@
             );
 
             const deleteTestHost=async ()=>{
-                // console.log(toBeDelHostValue);
-
-                // const res=await delTQ(toBeDelHostValue)
-                if(res.opCode){
-                    toBeDelHostValue.forEach(detail => {
-                    host.value=host.value.filter(item=>item.key!=detail)
-                    }) 
-                    store.dispatch('app/testHostPair',JSON.stringify(host.value))
-                    ElMessage({
-                        type: 'success',
-                        message: t('dialog.doneDelele'),
-                    })
-                }else{
-                    ElMessage({
-                                message: res.msg,
-                                type: 'error',
-                            })
-                }
+                toBeDelHostValue.forEach(detail => {
+                host.value=host.value.filter(item=>item.key!=detail)
+                }) 
+                store.dispatch('app/testHostPair',JSON.stringify(host.value))
+                ElMessage({
+                    type: 'success',
+                    message: t('dialog.doneDelele'),
+                })
             }
 
             const initGetMenu=async()=>{
@@ -333,8 +307,6 @@
                 dialogVisible,
                 dialogTableValue,
                 addTestQueue,
-                delTestQueue,
-                startTest,
                 deleteTestHost,
                 handleSelect,
                 checkTQ
