@@ -193,7 +193,7 @@
                 const res=await testTQ(form)
                 
                 if(res.opCode){
-                    const keyValue=form.server[0]+sep+form.server[2]+"------"+form.client[0]+sep+form.client[2]+(form.directions?t('rdmaTest.birections'):t('rdmaTest.unidirection'))
+                    const keyValue=form.server[0]+sep+form.server[2]+"------"+form.client[0]+sep+form.client[2]
                     host.value.unshift({key:form.test_pair_id,label:keyValue})
                     // console.log(host.value);
                     store.dispatch('app/testHostPair',JSON.stringify(host.value))

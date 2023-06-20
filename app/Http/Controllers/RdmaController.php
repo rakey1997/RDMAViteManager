@@ -981,71 +981,90 @@ class RdmaController extends Controller
     private function unpackAndExcute($rdmaTestList){
         foreach($rdmaTestList as $rdmaTest){
             $test_queue=$rdmaTest['test_queue'];
+            $start_flag=0;
             // var_dump($rdmaTest);
             $need_test_flag="1";
+            $cmd="";
             if($rdmaTest['rdma_sendbw_flag']==$need_test_flag){
                 $cmd='ib_send_bw';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_readbw_flag']==$need_test_flag){
                 $cmd='ib_read_bw';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_writebw_flag']==$need_test_flag){
                 $cmd='ib_write_bw';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_atomicbw_flag']==$need_test_flag){
                 $cmd='ib_atomic_bw';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_ethernetbw_flag']==$need_test_flag){
                 $cmd='raw_ethernet_bw';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_sendlat_flag']==$need_test_flag){
                 $cmd='ib_send_lat';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_readlat_flag']==$need_test_flag){
                 $cmd='ib_read_lat';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_writelat_flag']==$need_test_flag){
                 $cmd='ib_write_lat';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_atomiclat_flag']==$need_test_flag){
                 $cmd='ib_atomic_lat';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
             if($rdmaTest['rdma_ethernetlat_flag']==$need_test_flag){
                 $cmd='raw_ethernet_lat';
+                $start_flag++;
                 RdmaTestCase::dispatch($cmd,$rdmaTest)->onQueue($test_queue); 
             }
         }
+        return $start_flag;
     }
 
     protected function excuteTest(Request $request){
         $jsonArr=array();
+        $rdma_test_Info=new RdmaTestModel();
         $view_rdma_test_Info=new ViewRdmaTestModel();
         $data=$request->input();
 
         $TQ_Info_List=$data['id_arr'];
+        $total=0;
+        $start_flag=0;
         if(empty($TQ_Info_List)){
             $rdmaTestList=$view_rdma_test_Info->where('test_queue_state','0')->get()->toArray();
-            $this->unpackAndExcute($rdmaTestList);
+            $rdma_test_Info->where('test_queue_state','0')->update(['test_queue_state'=>'1']);
+            $total=$this->unpackAndExcute($rdmaTestList);
+
         }else{
             foreach($TQ_Info_List as $TQ_Info){
                 $rdmaTestList=$view_rdma_test_Info->where('test_identifier',$TQ_Info[0])->where('test_pair_id',$TQ_Info[1])->where('test_queue_state','0')->get()->toArray();
-                $this->unpackAndExcute($rdmaTestList);
+                $start_flag=$this->unpackAndExcute($rdmaTestList);
+                $total+=$start_flag;
             }
+            $rdma_test_Info->where('test_identifier',$TQ_Info[0])->where('test_pair_id',$TQ_Info[1])->update(['test_queue_state'=>'1']);
         }
 
         $jsonArr['opCode']=true;
-        $jsonArr['result']='Add to Test Queue Successfully';
+        $jsonArr['result']=$total.' Test Items Add to Test Queue Successfully';
         return $jsonArr;
-
     }
 
     protected function returnTestResult(Request $request){

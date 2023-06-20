@@ -15,6 +15,7 @@ class RdmaTestCase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    // public $connection;
     public $rdmaTest,$cmd;
     public $jsonArr;
     /**
@@ -24,6 +25,7 @@ class RdmaTestCase implements ShouldQueue
      */
     public function __construct($cmd,$rdmaTest)
     {
+        // $this->connection = $connection;
         $this->rdmaTest = $rdmaTest;
         $this->cmd = $cmd;
     }
@@ -36,6 +38,7 @@ class RdmaTestCase implements ShouldQueue
     }
 
     public function updateTestResult($rdma_test_Info,$test_identifier,$test_pair_id,$flag,$costtime){
+        $res=0;
         switch($this->cmd){
             case "ib_send_bw":
                 $res=$rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['rdma_sendbw_flag'=>$flag,'rdma_sendbw_costtime'=>$costtime]);
@@ -83,10 +86,13 @@ class RdmaTestCase implements ShouldQueue
     {
         $rdma_test_Info=new RdmaTestModel();
         $rdmaTest=$this->rdmaTest;
-        $direction_flag=$rdmaTest['bidirection']==2?" ":" -b ";  //是否rdma双向测试，2为单向测试，3为双向测试
+        $direction_flag=$rdmaTest['bidirection']==2?" ":" -b ";  
         $direction_name=$rdmaTest['bidirection']==2?"undirection":"bidirection";  //是否rdma双向测试，2为单向测试，3为双向测试
 
-        $qp_flag=stripos($this->cmd,"lat")!==false?" ":" -q 10";  //lat时延测试没有q参数
+        $direction_flag=stripos($this->cmd,"lat")!==false?"":$direction_flag;  //lat时延测试没有b参数、是否rdma双向测试，2为单向测试，3为双向测试
+        $direction_name=stripos($this->cmd,"lat")!==false?"":$direction_name;  //lat时延测试没有b参数、是否rdma双向测试，2为单向测试，3为双向测试
+
+        $qp_flag=stripos($this->cmd,"lat")!==false?"":" -q 10";  //lat时延测试没有q参数
 
         $test_identifier=$rdmaTest['test_identifier'];
         $test_pair_id=$rdmaTest['test_pair_id'];
@@ -118,8 +124,10 @@ class RdmaTestCase implements ShouldQueue
         // $jsonArr['msg']='test finished';
 
         if(!$verify_server){
+            $rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['test_queue_state'=>'4']);
             throw new Exception('can not connect to server.');
         }elseif(!$verify_client){
+            $rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['test_queue_state'=>'4']);
             throw new Exception('can not connect to client.');
         }else{
             //birection -b
@@ -149,8 +157,8 @@ class RdmaTestCase implements ShouldQueue
                     // sudo ib_atomic_lat -F -d mlx5_2 -R --report_gbits
                     // #10.10.10.20上运行
                     // sudo ib_atomic_lat -F -d mlx5_0 -R --report_gbits 10.10.10.10
-                    $command_check_server=$this->cmd.' -R -F -d '.$rdma_name_server.' --report_gbits'.$direction_flag;
-                    $command_check_client=$this->cmd.' -R -F -d '.$rdma_name_client.' --report_gbits'.$direction_flag.$rdma_ipv4_server;
+                    $command_check_server=$this->cmd.' -R -F -d '.$rdma_name_server.' --report_gbits '.$direction_flag;
+                    $command_check_client=$this->cmd.' -R -F -d '.$rdma_name_client.' --report_gbits '.$direction_flag.$rdma_ipv4_server;
                     break;
                 case 'raw_ethernet_bw':
                     // 1. 测试10.10.10.10至10.10.10.20方向带宽
@@ -158,8 +166,8 @@ class RdmaTestCase implements ShouldQueue
                     // sudo raw_ethernet_bw -d mlx5_2 --client -F -B 10:70:fd:31:ea:dc -E 10:70:fd:31:f3:bc --report_gbits -m 9600 -q 10
                     // #10.10.10.20上运行
                     // sudo raw_ethernet_bw -d mlx5_0 --client -F -B 10:70:fd:31:f3:bc -E 10:70:fd:31:ea:dc --report_gbits -m 9600 -q 10
-                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' --client --report_gbits'.$direction_flag.'-B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
-                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' --client --report_gbits'.$direction_flag.'-E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
+                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' --client --report_gbits'.$direction_flag.' -B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
+                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' --client --report_gbits'.$direction_flag.' -E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
                     break;
                 case 'raw_ethernet_lat':
                     // 1. 测试10.10.10.10至10.10.10.20方向带宽
@@ -167,22 +175,25 @@ class RdmaTestCase implements ShouldQueue
                     // sudo raw_ethernet_lat -d mlx5_2 --server -F -B 10:70:fd:31:ea:dc -E 10:70:fd:31:f3:bc --report_gbits -m 9600
                     // #10.10.10.20上运行
                     // sudo raw_ethernet_lat -d mlx5_0 --client -F -B 10:70:fd:31:f3:bc -E 10:70:fd:31:ea:dc --report_gbits -m 9600
-                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' --server --report_gbits'.$direction_flag.'-B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
-                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' --client --report_gbits'.$direction_flag.'-E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
+                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' --server --report_gbits'.$direction_flag.' -B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
+                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' --client --report_gbits'.$direction_flag.' -E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
                     break;
                 default:
-                    $command_check_server=$this->cmd.' -a -R -F -d '.$rdma_name_server.' --report_gbits'.$qp_flag.$direction_flag;
-                    $command_check_client=$this->cmd.' -a -R -F -d '.$rdma_name_client.' --report_gbits'.$qp_flag.$direction_flag.$rdma_ipv4_server;
+                    $command_check_server=$this->cmd.' -a -R -F -d '.$rdma_name_server.$qp_flag.$direction_flag.' --report_gbits';
+                    $command_check_client=$this->cmd.' -a -R -F -d '.$rdma_name_client.$qp_flag.$direction_flag.' --report_gbits '.$rdma_ipv4_server;
                     break;
             }
 
             $command_server=$command_check_server.' 2>&1 >'.$test_file_name.'server.log'.' &';
             $command_client=$command_check_client.' 2>&1 >'.$test_file_name.'client.log'.' &';
+            var_dump($command_server);
+            var_dump($command_client);
 
+            $rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['test_queue_state'=>'2']);
+            $this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"1",0);  //开始测试
             $time_start=microtime(true);
             $ssh_client_server->exec($command_server);            
             $ssh_client_client->exec($command_client);
-            $this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"1",0);  //开始测试
 
             while(1){
                 sleep(5);
@@ -212,6 +223,7 @@ class RdmaTestCase implements ShouldQueue
                     // var_dump('in testing');
                 }
             }
+            $rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['test_queue_state'=>'3']);
 
             // $jsonArr['client_result']=$test_file_name."client";
             // $jsonArr['cost_time']=$seconds;

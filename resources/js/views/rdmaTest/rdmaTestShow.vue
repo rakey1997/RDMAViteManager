@@ -33,7 +33,7 @@
                     <el-switch v-model="row.card_state" :active-value=1 :inactive-value=0 :disabled="true" :v-if="row.card_state"/>
                 </template>
                 <template v-slot="{row}" v-else-if="op.prop==='test_queue_state'">
-                    <div>{{`${row.test_queue_state=='0'?"Wait to put into Test Queue":row.test_queue_state=='1'?"Wait to Start Test":row.test_queue_state=='2'?"Testing":"Test Finshed"}`}}</div>
+                    <div>{{`${row.test_queue_state=='0'?"Wait to put into Test Queue":row.test_queue_state=='1'?"Wait to Start Test":row.test_queue_state=='2'?"Testing":row.test_queue_state=='3'?"Test Finshed":"Test Task Start Failure"}`}}</div>
                 </template>
                 <template v-slot="{row}" v-else-if="op.prop==='bidirection'">
                     <div>{{`${row.bidirection=='2'?"unidirection":"bidirection"}`}}</div>
@@ -91,8 +91,6 @@
                 if(res.opCode){
                     tableData.value=res.record
                     total.value=res.total
-                    console.log(res.record);
-                    console.log('tableData:',tableData.value);
                 }
             }
 
@@ -170,7 +168,7 @@
                     const res=await excuteTest({"id_arr":id_arr})
                     checkFlag(res)
                 }
-                // initGetResult()
+                initGetResult()
             }
 
             initGetResult()
