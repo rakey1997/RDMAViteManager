@@ -1,5 +1,5 @@
 <template>
-    <h2 style="text-align: center;width: 90%;">{{$t('rdmaTest.testResultTitle')}}</h2>
+    <h2 style="text-align: center;width: 90%;">{{$t('rdmaTest.testOpTitle')}}</h2>
     <el-row :gutter="20" class="header">
         <el-col :span="7">
             <el-input 
@@ -14,10 +14,13 @@
             <el-button type="primary" icon="UploadFilled" @click="initGetResult" >{{$t('rdmaTest.refreshBtn')}}</el-button>
             <el-button type="primary" icon="DeleteFilled" color="red" @click="batchDelete" :disabled="flag">{{$t('rdmaTest.batchDelete')}}</el-button>
             <el-button type="primary" icon="UploadFilled" @click="startTest" :disabled="(flag)" >{{$t('rdmaTest.startTestBtn')}}</el-button>
+            <el-button type="primary" icon="UploadFilled" @click="toExcel" :disabled="(flag)" >{{$t('rdmaTest.exportBtn')}}</el-button>
+            <el-button type="primary" icon="UploadFilled" @click="openResultUrl" :disabled="(flag)" >{{$t('rdmaTest.openResultUrl')}}</el-button>
         </el-form-item>
     </el-row>
+    <h2 style="text-align: center;width: 90%;">{{$t('rdmaTest.testStatusTitle')}}</h2>
     <el-card class="box-card">
-        <el-table ref="multipleTableRef" :data="tableData" style="width: 100%" max-height="700" size="small">
+        <el-table ref="multipleTableRef" :data="tableData" id="out-table" style="width: 100%" max-height="700" size="small">
             <el-table-column 
                 v-for="(op,index) in testOptions" 
                 :key="index" 
@@ -39,7 +42,7 @@
                     <div>{{`${row.bidirection=='2'?"unidirection":"bidirection"}`}}</div>
                 </template>
                 <template v-slot="{row}" v-else-if="op.prop.includes('flag')">
-                    <div>{{`${row[op.prop]=='0'?"no need test":row[op.prop]=='1'?"not finish":row[op.prop]=='2'?"success":"fail"}`}}</div>
+                    <div>{{`${row[op.prop]=='0'?"no need test":row[op.prop]=='1'?"wait starting":row[op.prop]=='2'?"testing":row[op.prop]=='3'?"success":"fail"}`}}</div>
                 </template>
                 <template v-slot="{row}" v-else-if="op.prop.includes('costtime')">
                     <div>{{`${row[op.prop]===null?"":row[op.prop].toFixed(4)}`}}</div>
@@ -66,6 +69,8 @@
     import { getResult,delTQ,excuteTest } from "../../api/rdmaTest";
     import {useStore} from "vuex";
     import { useI18n } from "vue-i18n";
+    import { saveAs } from 'file-saver';
+    import * as XLSX from 'xlsx';
 
     export default {
         name:'rdmaTestShow',
@@ -127,6 +132,36 @@
                 const selectRecord=multipleTableRef.value.getSelectionRows()
                 id_arr = selectRecord.map(obj => {return [obj.test_identifier,obj.test_pair_id]})
             }
+
+            const openResultUrl=()=>{
+                window.open("http://192.168.236.111:5601/app/visualize",'_blank');
+            }
+
+            const toExcel=()=>{
+                /* 从表生成工作簿对象 */
+                var wb = XLSX.utils.table_to_book(document.querySelector("#out-table"));
+                /* 获取二进制字符串作为输出 */
+                var wbout = XLSX.write(wb, {
+                    bookType: "xlsx",
+                    bookSST: true,
+                    type: "array"
+                });
+                try {
+                    saveAs(
+                    //Blob 对象表示一个不可变、原始数据的类文件对象。
+                    //Blob 表示的不一定是JavaScript原生格式的数据。
+                    //File 接口基于Blob，继承了 blob 的功能并将其扩展使其支持用户系统上的文件。
+                    //返回一个新创建的 Blob 对象，其内容由参数中给定的数组串联组成。
+                    new Blob([wbout], { type: "application/octet-stream" }),
+                    //设置导出文件名称
+                    "rdmaTestResult.xlsx"
+                    );
+                } catch (e) {
+                    if (typeof console !== "undefined") console.log(e, wbout);
+                }
+                return wbout;
+            }
+
             const batchDelete=async ()=>{
                 getSelectionRows()
                 if (id_arr.length!==0){
@@ -184,6 +219,8 @@
                 handleCurrentChange,
                 handleSizeChange,
                 startTest,
+                toExcel,
+                openResultUrl,
                 tableData,
                 testOptions
             }

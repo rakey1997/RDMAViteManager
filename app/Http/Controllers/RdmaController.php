@@ -903,7 +903,7 @@ class RdmaController extends Controller
         foreach($data['testHosts'] as $test_pair_id){
             $test_relation=$rdma_test_relation->where('test_pair_id',$test_pair_id)->select('rdma_id_server','rdma_id_client')->get()->toArray();
             for($no=1;$no<=$data['testCount'];$no++){
-                $test_identifier= date('YmdHis',time()).'_'.$no;
+                $test_identifier= date('YmdHis',time()).'-'.$no;
                 $res=$rdma_test_Info->create([
                     "test_identifier"=>$test_identifier, 
                     "test_pair_id"=>$test_pair_id, 
