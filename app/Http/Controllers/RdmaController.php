@@ -908,6 +908,7 @@ class RdmaController extends Controller
                     "test_identifier"=>$test_identifier, 
                     "test_pair_id"=>$test_pair_id, 
                     "test_count_no"=>$no, 
+                    "test_qp_num"=>$data['qpNum'], 
                     "bidirection"=>$data['directions']?3:2, 
                     "rdma_id_server"=>$test_relation[0]['rdma_id_server'],
                     "rdma_id_client"=>$test_relation[0]['rdma_id_client'],
@@ -1079,14 +1080,14 @@ class RdmaController extends Controller
 
         if($queryItem==''){
             $total=$rdma_test_Info->count();
-            $record=$record=$rdma_test_Info->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
+            $record=$record=$rdma_test_Info->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','test_qp_num','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
             'client_host_name','client_card_name','client_card_ipv4_addr','client_card_mac_addr','client_ifname','client_gid','rdma_sendbw_flag','rdma_sendbw_costtime',
             'rdma_readbw_flag','rdma_readbw_costtime','rdma_writebw_flag','rdma_writebw_costtime','rdma_atomicbw_flag','rdma_atomicbw_costtime','rdma_ethernetbw_flag','rdma_ethernetbw_costtime',
             'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',
             'rdma_ethernetlat_flag','rdma_ethernetlat_costtime','update_time')->orderBy('update_time','desc')->skip($skipNum)->take($pagesize)->get()->toArray();
         }else{
             $total=$rdma_test_Info->where('test_identifier','like', '%'.$queryItem.'%')->count();
-            $record=$record=$rdma_test_Info->where('test_identifier','like','%'.$queryItem.'%')->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
+            $record=$record=$rdma_test_Info->where('test_identifier','like','%'.$queryItem.'%')->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','test_qp_num','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
             'client_host_name','client_card_name','client_card_ipv4_addr','client_card_mac_addr','client_ifname','client_gid','rdma_sendbw_flag','rdma_sendbw_costtime',
             'rdma_readbw_flag','rdma_readbw_costtime','rdma_writebw_flag','rdma_writebw_costtime','rdma_atomicbw_flag','rdma_atomicbw_costtime','rdma_ethernetbw_flag','rdma_ethernetbw_costtime',
             'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',

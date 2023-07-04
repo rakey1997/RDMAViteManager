@@ -49,6 +49,12 @@ export const testOptions = [
         width: 100,
     },
     {
+        label: "test_qp_num",
+        prop: "test_qp_num",
+        sortable: true,
+        width: 100,
+    },
+    {
         label: "Server_Host_Name",
         prop: "server_host_name",
         width: 100,

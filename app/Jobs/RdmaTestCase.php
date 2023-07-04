@@ -89,6 +89,7 @@ class RdmaTestCase implements ShouldQueue
 
         $test_identifier=$rdmaTest['test_identifier'];
         $test_pair_id=$rdmaTest['test_pair_id'];
+        $test_qp_num=$rdmaTest['test_qp_num'];
         $sep="-";
         $path="\/tmp\/";  //保存文件目录
         $collect_server_ip="192.168.221.37";  //采集文件服务器
@@ -143,29 +144,29 @@ class RdmaTestCase implements ShouldQueue
                 $direction_flag=""; 
                 $direction_name="";  
                 $qp_flag=""; //lat时延测试没有q参数
-                $test_file_name=$path.$test_identifier.$sep.$test_pair_id.$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep;
+                $test_file_name=$path.$test_identifier.$sep.$test_pair_id.$sep.$test_qp_num.$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep;
             }else{
                 //测试带宽
                 $direction_flag=$rdmaTest['bidirection']==2?"":" -b";   
                 $direction_name=$rdmaTest['bidirection']==2?"undirection":"bidirection";  //是否rdma双向测试，2为单向测试，3为双向测试
-                $qp_flag=" -q 10";  //采用10
-                $test_file_name=$path.$test_identifier.$sep.$test_pair_id.$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep.$direction_name.$sep;
+                $qp_flag=" -q ".$test_qp_num;  //默认采用10
+                $test_file_name=$path.$test_identifier.$sep.$test_pair_id.$sep.$test_qp_num.$sep.$this->cmd.$sep.$host_name_server.$sep.$rdma_name_server.$sep.$host_name_client.$sep.$rdma_name_client.$sep.$direction_name.$sep;
             }
 
             switch ($this->cmd) {
                 case 'ib_atomic_bw':
                     // #10.10.10.10上运行
-                    // sudo ib_atomic_bw -A FETCH_AND_ADD -m 4096 -d mlx5_2 -R -F -q 1
+                    // sudo ib_atomic_bw -A FETCH_AND_ADD -m 4096 -d mlx5_2 -F -q 1
                     // #10.10.10.20上运行
-                    // sudo ib_atomic_bw -A FETCH_AND_ADD -m 4096 -d mlx5_0 -R -F -q 1 10.10.10.10
-                    $command_check_server=$this->cmd.' -F -d '.$rdma_name_server.' -q 1 -m 4096 -A FETCH_AND_ADD'.$direction_flag;
-                    $command_check_client=$this->cmd.' -F -d '.$rdma_name_client.' -q 1 -m 4096 -A FETCH_AND_ADD '.$direction_flag.$rdma_ipv4_server;
+                    // sudo ib_atomic_bw -A FETCH_AND_ADD -m 4096 -d mlx5_0 -F -q 1 10.10.10.10
+                    $command_check_server=$this->cmd.' -F -d '.$rdma_name_server.' -q '.$test_qp_num.' -m 4096 -A FETCH_AND_ADD'.$direction_flag;
+                    $command_check_client=$this->cmd.' -F -d '.$rdma_name_client.' -q '.$test_qp_num.' -m 4096 -A FETCH_AND_ADD '.$direction_flag.$rdma_ipv4_server;
                     break;
                 case 'ib_atomic_lat':
                     // #10.10.10.10上运行
-                    // sudo ib_atomic_lat -F -d mlx5_2 -R --report_gbits
+                    // sudo ib_atomic_lat -F -d mlx5_2 --report_gbits
                     // #10.10.10.20上运行
-                    // sudo ib_atomic_lat -F -d mlx5_0 -R --report_gbits 10.10.10.10
+                    // sudo ib_atomic_lat -F -d mlx5_0 --report_gbits 10.10.10.10
                     $command_check_server=$this->cmd.' -F -d '.$rdma_name_server.' --report_gbits';
                     $command_check_client=$this->cmd.' -F -d '.$rdma_name_client.' --report_gbits '.$rdma_ipv4_server;
                     break;
@@ -216,7 +217,7 @@ class RdmaTestCase implements ShouldQueue
                 $pid_check_server=$ssh_client_server_check->exec("ps -ef|grep '".$command_check_server."'|wc -l");
                 $pid_check_client=$ssh_client_client_check->exec("ps -ef|grep '".$command_check_client."'|wc -l");
 
-                if($seconds>600){
+                if($seconds>1780){
                     $ssh_client_server_check->exec("pkill -9 -f '".$command_check_server."'");
                     $ssh_client_client_check->exec("pkill -9 -f '".$command_check_client."'");
                     var_dump($ssh_client_server_check->exec("pkill -9 -f '".$command_check_server."'"));
@@ -235,14 +236,17 @@ class RdmaTestCase implements ShouldQueue
                     // var_dump('test timeout, break');
                     break;
                 }else if($pid_check_server=="2" && $pid_check_client=="2" ){
-
-                    $res=$this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"3",$seconds); //成功
-                    // $jsonArr['opCode']=$res;
-                    // $jsonArr['msg']='test success';
-                    $test_result_flag = true;
-                    var_dump($ssh_client_server_check->exec("ps -ef|grep '".$command_check_server."'"));
-                    var_dump("----result-----");
-                    var_dump($ssh_client_client_check->exec("ps -ef|grep '".$command_check_client."'"));
+                    if($seconds>6){
+                        $res=$this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"3",$seconds); //成功
+                        // $jsonArr['opCode']=$res;
+                        // $jsonArr['msg']='test success';
+                        $test_result_flag = true;
+                        var_dump($ssh_client_server_check->exec("ps -ef|grep '".$command_check_server."'"));
+                        var_dump("----result-----");
+                        var_dump($ssh_client_client_check->exec("ps -ef|grep '".$command_check_client."'"));
+                    }else{
+                        $res=$this->updateTestResult($rdma_test_Info,trim($test_identifier),trim($test_pair_id),"4",$seconds); //太短时间也是异常退出
+                    };
                     break;
                 }else {
                     // var_dump('in testing');

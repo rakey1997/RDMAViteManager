@@ -27,8 +27,11 @@
     </template>
     </el-transfer>
     <el-form :model="form" label-width="100px">
-    <el-form-item :label="$t('rdmaTest.testCount')">
+        <el-form-item :label="$t('rdmaTest.testCount')">
             <el-input v-model.number="form.count" />
+        </el-form-item>
+        <el-form-item :label="$t('rdmaTest.qpNum')">
+            <el-input v-model.number="form.qpNum" />
         </el-form-item>
         <el-form-item :label="$t('rdmaTest.directions')">
             <el-select v-model="form.directions" placeholder="please select test dierection">
@@ -78,6 +81,7 @@
                 "testItems":[],
                 "directions":false,
                 "testCount":1,
+                "qpNum":10,
                 "testQueue":"default",
             }
             let toBeDelHostValue = []
@@ -101,6 +105,7 @@
                     server: [],
                     client: [],
                     count:1,
+                    qpNum:10,
                     testQueue:"default",
                     })
 
@@ -167,6 +172,7 @@
                 testForm.testItems=selectedTestItems.value
                 testForm.directions=form.directions
                 testForm.testCount=form.count
+                testForm.qpNum=form.qpNum
                 testForm.testQueue=form.testQueue
                 const res=await addTQ(testForm)
                 if(res.opCode){

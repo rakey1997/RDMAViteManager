@@ -52,7 +52,7 @@
         <el-pagination
                 v-model:current-page="rdmaQueryForm.pagenum"
                 v-model:page-size="rdmaQueryForm.pagesize"
-                :page-sizes="[10, 50,100]"
+                :page-sizes="[10, 50,100,500,1000,2000,3000,4000]"
                 :small=false
                 background
                 layout="->,prev, pager, next, jumper, sizes, total"
@@ -86,7 +86,7 @@
             const rdmaQueryForm=reactive({
                 query:'',
                 pagenum: 1,
-                pagesize: 50
+                pagesize: 10
             })
 
             const multipleTableRef=ref(null)
