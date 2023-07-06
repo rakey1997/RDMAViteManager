@@ -26,7 +26,7 @@
             <el-input v-model="ruleForm.host_login_user" />
         </el-form-item>
         <el-form-item :label="$t('hostConfig.password')" prop="password">
-            <el-input v-model="ruleForm.password" type="password" autocomplete="off" show-password />
+            <el-input v-model="ruleForm.host_login_password" type="password" autocomplete="off" show-password />
         </el-form-item>
         <el-form-item :label="$t('hostConfig.confirmPass')" prop="checkPass">
             <el-input v-model="ruleForm.checkPass" type="password" autocomplete="off" show-password  />
@@ -70,19 +70,12 @@
             const {t}=useI18n()
             const ruleFormRef = ref(null)
             const ruleForm=reactive({
-                // host_name:'SBL_RDMA01',
-                // host_ip:'192.168.221.34',
-                // host_ssh_port:"22",
-                // host_login_user:'daiqg',
-                // password:'daiqg@1234',
-                // checkPass:'daiqg@1234',
-                // state: true
-                host_name:'E_RDMA02',
-                host_ip:'192.168.26.207',
-                host_ssh_port:"22202",
-                host_login_user:'pcl02',
-                password:'onl',
-                checkPass:'onl',
+                host_name:'XXX_RDMA01',
+                host_ip:'192.168.1.1',
+                host_ssh_port:"22",
+                host_login_user:'xxx',
+                host_login_password:'',
+                checkPass:'',
                 state: true
             })
 
@@ -104,7 +97,7 @@
             const validatePass2 = (_, value, callback) => {
                     if (value === '') {
                         callback(new Error(t('dialog.checkPass')))
-                    } else if (value !== ruleForm.password) {
+                    } else if (value !== ruleForm.host_login_password) {
                         callback(new Error(t('dialog.passMismatch')))
                     } else {
                         callback()
@@ -115,7 +108,7 @@
                 host_ip:[{required:true,message:t('hostConfigForm.hostIp'), trigger: 'blur'}],
                 host_ssh_port: [{required:true,message:t('hostConfigForm.hostSSHPort'), trigger: 'blur' }],
                 host_login_user:[{required:true,message:t('hostConfigForm.hostLoginUser'), trigger: 'blur'}],
-                password: [{ validator: validatePass, trigger: 'blur' }],
+                host_login_password: [{ validator: validatePass, trigger: 'blur' }],
                 checkPass: [{ validator: validatePass2, trigger: 'blur' }],
             })
 

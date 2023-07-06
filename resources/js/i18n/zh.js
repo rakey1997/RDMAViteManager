@@ -230,7 +230,8 @@ export default {
         testCount: "测试次数",
         qpNum: "测试QP参数",
         testQueue: "测试队列",
-        placeholder: "需要查找的测试记录日期，如20230608或0608等",
+        placeholder:
+            "要查找的日期，如20230608或0608等;或测试组ID;或服务/客户端主机名",
     },
     rdmaTestShow: {
         No: "序号",

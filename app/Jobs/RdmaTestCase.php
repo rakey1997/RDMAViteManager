@@ -254,7 +254,7 @@ class RdmaTestCase implements ShouldQueue
             }
             $rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['test_queue_state'=>'3']);
             if($test_result_flag){
-                $collect_server_ip="192.168.221.37";  //采集文件服务器
+                $collect_server_ip="192.168.236.52";  //采集文件服务器
                 $collect_server_path="\/opt\/logstash\/test_data\/server"; //服务端日志保存记录
                 $collect_client_path="\/opt\/logstash\/test_data\/client"; //服务端日志保存记录
     

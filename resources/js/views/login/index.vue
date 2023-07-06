@@ -41,7 +41,7 @@
 
       const loginForm = reactive({
           username: 'super',
-          password:'Changeme_123',
+          password:'',
           })
       
       const loginRules = reactive({

@@ -1,7 +1,7 @@
 <template>
     <h2 style="text-align: center;width: 90%;">{{$t('rdmaTest.testOpTitle')}}</h2>
     <el-row :gutter="20" class="header">
-        <el-col :span="7">
+        <el-col :span="8">
             <el-input 
                 clearable 
                 v-model="rdmaQueryForm.query" 

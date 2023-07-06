@@ -23,6 +23,35 @@ use App\Jobs\RdmaTestCase;
 
 class RdmaController extends Controller
 {
+    protected function getCmdResult($ssh_client){
+        $result=$ssh_client->exec('echo $?')=="0"?True:False;
+        return $result;
+    }
+
+    protected function sshConnVerify($ssh_client,$hostIp,$hostSSHPort,$hostLoginUser,$password){
+        if (!$ssh_client->login($hostLoginUser, $password)) {
+            return false;
+        }
+        return true;
+    }
+
+    protected function getSSHClient($data){
+        $host_ip=$data['host_ip'];
+        $host_ssh_port=$data['host_ssh_port'];
+        $host_login_user=$data['host_login_user'];
+        $password=$data['host_login_password'];
+        $ssh_client = new SSH2($host_ip,$host_ssh_port);
+
+        $verify=$this->sshConnVerify($ssh_client,$host_ip,$host_ssh_port,$host_login_user,$password);
+        if(!$verify){
+            return response()->json(
+                ['message' => 'Can not connect to server, please check connection or password.']
+            , 404);
+        }else{
+            return $ssh_client;
+        }
+    }
+
     protected function returnHost(Request $request){
         $jsonArr=array();
         $hostName=$request->input('query');
@@ -68,40 +97,30 @@ class RdmaController extends Controller
         $jsonArr=array();
         $host_Info=new HostModel();
         $data=$request->input();
+
         $host_match=$host_Info->where('host_name',$data['host_name'])->get();
-        $host_ip=$data['host_ip'];
-        $host_ssh_port=$data['host_ssh_port'];
-        $host_login_user=$data['host_login_user'];
-        $password=$data['password'];
-        $ssh_client = new SSH2($host_ip,$host_ssh_port);
 
         if (count($host_match)===0){
-            $verify=$this->sshConnVerify($ssh_client,$host_ip,$host_ssh_port,$host_login_user,$password);
-            if(!$verify){
-                return response()->json(
-                    ['message' => 'Can not connect to server, please check connection or password.']
-                , 404);
+            $ssh_client=$this->getSSHClient($data);
+            $newRecord=$host_Info->create([
+                "host_name"=>$data['host_name'], 
+                "host_ip"=>$data['host_ip'],
+                "host_ssh_port"=>$data['host_ssh_port'],
+                'host_login_user'=>$data['host_login_user'],
+                'host_login_password' => $data['host_login_password'],
+                'state' => $data['state'],
+            ]);
+            $res=$newRecord->save();
+            if ($res==1){
+                $jsonArr['opCode']=true;
+                $jsonArr['msg']='add record success';
             }else{
-                $newRecord=$host_Info->create([
-                    "host_name"=>$data['host_name'], 
-                    "host_ip"=>$data['host_ip'],
-                    "host_ssh_port"=>$data['host_ssh_port'],
-                    'host_login_user'=>$data['host_login_user'],
-                    'host_login_password' => $data['password'],
-                    'state' => $data['state'],
-                ]);
-                $res=$newRecord->save();
-                if ($res==1){
-                    $jsonArr['opCode']=true;
-                    $jsonArr['msg']='add record success';
-                }else{
-                    $jsonArr['opCode']=false;
-                    $jsonArr['msg']='add record fail';
-                }
-                $this->getCardInfo($ssh_client,$newRecord->id);
-                $this->getRDMAInfo($ssh_client,$data['host_name']);
-                return $jsonArr;
+                $jsonArr['opCode']=false;
+                $jsonArr['msg']='add record fail';
             }
+            $this->getCardInfo($ssh_client,$newRecord->id);
+            $this->getRDMAInfo($ssh_client,$data['host_name']);
+            return $jsonArr;
         }else{
             return response()->json(
                 ['message' => 'Host already exsist!']
@@ -114,38 +133,27 @@ class RdmaController extends Controller
         $host_Info=new HostModel();
         $data=$request->input();
         $host_match=$host_Info->where('id',$hostID)->get()->toArray();
-        $host_ip=$data['host_ip'];
-        $host_ssh_port=$data['host_ssh_port'];
-        $host_login_user=$data['host_login_user'];
-        $password=$data['password'];
-        $ssh_client = new SSH2($host_ip,$host_ssh_port);
 
-        $verify=$this->sshConnVerify($ssh_client,$host_ip,$host_ssh_port,$host_login_user,$password);
         if (!empty($host_match)){
-            if(!$verify){
-                return response()->json(
-                    ['message' => 'Can not connect to server, please check connection or password.']
-                , 404);
+            $ssh_client=$this->getSSHClient($data);
+            $res=$host_Info->where('id',$hostID)->update([
+                "host_name"=>$data['host_name'], 
+                "host_ip"=>$host_ip,
+                "host_ssh_port"=>$host_ssh_port,
+                'host_login_user'=>$host_login_user,
+                'host_login_password' => $password,
+                // 'state' => $data['state'],
+            ]);
+            if ($res==1){
+                $jsonArr['opCode']=true;
+                $jsonArr['msg']='update success';
             }else{
-                $res=$host_Info->where('id',$hostID)->update([
-                    "host_name"=>$data['host_name'], 
-                    "host_ip"=>$host_ip,
-                    "host_ssh_port"=>$host_ssh_port,
-                    'host_login_user'=>$host_login_user,
-                    'host_login_password' => $password,
-                    // 'state' => $data['state'],
-                ]);
-                if ($res==1){
-                    $jsonArr['opCode']=true;
-                    $jsonArr['msg']='update success';
-                }else{
-                    $jsonArr['opCode']=false;
-                    $jsonArr['msg']='update fail';
-                }
-
-                $this->getCardInfo($ssh_client,$hostID);
-                return $jsonArr;
+                $jsonArr['opCode']=false;
+                $jsonArr['msg']='update fail';
             }
+
+            $this->getCardInfo($ssh_client,$hostID);
+            return $jsonArr;
         }else{
             return response()->json(
                 ['message' => 'Record not found.']
@@ -159,33 +167,20 @@ class RdmaController extends Controller
         $data=$request->input();
         $host_match=$host_Info->where('id',$hostID)->get();
 
-        $host_ip=$data['host_ip'];
-        $host_ssh_port=$data['host_ssh_port'];
-        $host_login_user=$data['host_login_user'];
-        $password=$data['password'];
-        $ssh_client = new SSH2($host_ip,$host_ssh_port);
-
-        $verify=$this->sshConnVerify($ssh_client,$host_ip,$host_ssh_port,$host_login_user,$password);
-
         if (!empty($host_match)){
-            if(!$verify){
-                return response()->json(
-                    ['message' => 'Can not connect to server, please check connection or password.']
-                , 404);
+            $ssh_client=$this->getSSHClient($data);
+            $res=$host_Info->where('id',$hostID)->update([
+                'host_login_password' => $data['host_login_password'],
+            ]);
+            if ($res==1){
+                $jsonArr['opCode']=true;
+                $jsonArr['msg']='update success';
             }else{
-                $res=$host_Info->where('id',$hostID)->update([
-                    'host_login_password' => $data['password'],
-                ]);
-                if ($res==1){
-                    $jsonArr['opCode']=true;
-                    $jsonArr['msg']='update success';
-                }else{
-                    $jsonArr['opCode']=false;
-                    $jsonArr['msg']='update fail';
-                }
-                $this->getCardInfo($ssh_client,$hostID);
-                return $jsonArr;
+                $jsonArr['opCode']=false;
+                $jsonArr['msg']='update fail';
             }
+            $this->getCardInfo($ssh_client,$hostID);
+            return $jsonArr;
         }else{
             return response()->json(
                 ['message' => 'Record not found.']
@@ -199,11 +194,7 @@ class RdmaController extends Controller
         $card_Info=new CardModel();
         $host_match=$host_Info->where('id',$hostID)->get()->toArray()[0];
 
-        $host_ip=$host_match['host_ip'];
         $host_name=$host_match['host_name'];
-        $host_ssh_port=$host_match['host_ssh_port'];
-        $host_login_user=$host_match['host_login_user'];
-        $password=$host_match['host_login_password'];
 
         $jsonArr['opCode']=false;
         $jsonArr['msg']='update fail';
@@ -215,16 +206,13 @@ class RdmaController extends Controller
                 $jsonArr['opCode']=true;
                 $jsonArr['msg']='update success';
             }else{
-                $ssh_client = new SSH2($host_ip,$host_ssh_port);
-                $verify=$this->sshConnVerify($ssh_client,$host_ip,$host_ssh_port,$host_login_user,$password);
-                if ($verify){
-                    $this->getCardInfo($ssh_client,$hostID);
-                    $this->getRDMAInfo($ssh_client,$host_name);
-                    $res=$host_Info->where('id',$hostID)->update(['state'=>$state]);
-                    if ($res==1){
-                        $jsonArr['opCode']=true;
-                        $jsonArr['msg']='update success';
-                    }
+                $ssh_client=$this->getSSHClient($host_match);
+                $this->getCardInfo($ssh_client,$hostID);
+                $this->getRDMAInfo($ssh_client,$host_name);
+                $res=$host_Info->where('id',$hostID)->update(['state'=>$state]);
+                if ($res==1){
+                    $jsonArr['opCode']=true;
+                    $jsonArr['msg']='update success';
                 }
             }
         }else{
@@ -553,13 +541,6 @@ class RdmaController extends Controller
         }
     }
 
-    public function sshConnVerify($ssh_client,$hostIp,$hostSSHPort,$hostLoginUser,$password){
-        if (!$ssh_client->login($hostLoginUser, $password)) {
-            return false;
-        }
-        return true;
-    }
-
     protected function driverLoad($ssh_client,$driver_type){
         $command='lsmod|grep -w "rdma_'.$driver_type.'\s'.'"';
         $find_result=$ssh_client->exec($command);
@@ -568,11 +549,6 @@ class RdmaController extends Controller
         }else{
             return False;
         }
-    }
-
-    protected function getCmdResult($ssh_client){
-        $result=$ssh_client->exec('echo $?')=="0"?True:False;
-        return $result;
     }
 
     public function sshExcuteFromSSH(Request $request){
@@ -585,19 +561,8 @@ class RdmaController extends Controller
         $host_match=$host_Info->where('host_name',$host_name)->get()->toArray()[0];
         if (count($host_match)!==0){
             $host_id=$host_match['id'];
-            $host_ip=$host_match['host_ip'];
-            $host_ssh_port=$host_match['host_ssh_port'];
-            $host_login_user=$host_match['host_login_user'];
             $password=$host_match['host_login_password'];
-
-            $ssh_client = new SSH2($host_ip,$host_ssh_port);
-
-            $verify=$this->sshConnVerify($ssh_client,$host_ip,$host_ssh_port,$host_login_user,$password);
-            if(!$verify){
-                return response()->json(
-                    ['message' => 'Can not connect to Host!']
-                , 404);
-            }
+            $ssh_client=$this->getSSHClient($host_match);
         }else{
             return response()->json(
                 ['message' => 'Can not find Host Connection Info!']
@@ -740,36 +705,27 @@ class RdmaController extends Controller
         $rdma_name=$rdma_para_match[0]['ifname'];
 
         $host_match=$host_Info->where('id',$rdma_para_match[0]['host_id'])->get()->toArray();
-        $host_ip=$host_match[0]['host_ip'];
-        $host_ssh_port=$host_match[0]['host_ssh_port'];
-        $host_login_user=$host_match[0]['host_login_user'];
         $password=$host_match[0]['host_login_password'];
-        $ssh_client = new SSH2($host_ip,$host_ssh_port);
+
         $detail="'del '.$rdma_name.'fail'";
 
         $delDriverCmd='rdma link del '.$rdma_name;
         $sudoDelDriverCmd='echo '.$password.' | sudo -S bash -c "'.$delDriverCmd.'"';
 
-        $verify=$this->sshConnVerify($ssh_client,$host_ip,$host_ssh_port,$host_login_user,$password);
-        if(!$verify){
-            return response()->json(
-                ['message' => 'Can not connect to server, please check connection or password.']
-            , 404);
-        }else{
-            $ssh_client->exec($sudoDelDriverCmd);
-            $result=$this->getCmdResult($ssh_client);
-            $detail=$result?'del '.$rdma_name.'success':'del '.$rdma_name.'fail';
-            if($result){
-                $res=$rdma_Info->destroy($id);
-                if ($res>=1){
-                    $jsonArr['opCode']=true;
-                    $jsonArr['msg']='delete success';
-                }else{
-                    $jsonArr['opCode']=false;
-                    $jsonArr['msg']='delete fail';
-                }
-                return $jsonArr;
+        $ssh_client=$this->getSSHClient($host_match[0]);
+        $ssh_client->exec($sudoDelDriverCmd);
+        $result=$this->getCmdResult($ssh_client);
+        $detail=$result?'del '.$rdma_name.'success':'del '.$rdma_name.'fail';
+        if($result){
+            $res=$rdma_Info->destroy($id);
+            if ($res>=1){
+                $jsonArr['opCode']=true;
+                $jsonArr['msg']='delete success';
+            }else{
+                $jsonArr['opCode']=false;
+                $jsonArr['msg']='delete fail';
             }
+            return $jsonArr;
         }
         $jsonArr['result']=$detail;
     }
@@ -797,11 +753,7 @@ class RdmaController extends Controller
 
         $host_match_server=$host_Info->where('host_name',$server_info[0])->get();
         if (count($host_match_server)!=0){
-            $host_ip_server=$host_match_server[0]['host_ip'];
-            $host_ssh_port_server=$host_match_server[0]['host_ssh_port'];
-            $host_login_user_server=$host_match_server[0]['host_login_user'];
-            $password_server=$host_match_server[0]['host_login_password'];
-            $ssh_client_server = new SSH2($host_ip_server,$host_ssh_port_server);
+            $ssh_client_server=$this->getSSHClient($host_match_server[0]);
         }else{
             return response()->json(
                 ['message' => 'Can not find server info, please check ...']
@@ -811,68 +763,50 @@ class RdmaController extends Controller
         $client_info=$data['client'];
         $rdma_info_client=explode(',',$client_info[2]);
         $host_match_client=$host_Info->where('host_name',$client_info[0])->get();
-        if (count($host_match_server)!=0){
-            $host_ip_client=$host_match_client[0]['host_ip'];
-            $host_ssh_port_client=$host_match_client[0]['host_ssh_port'];
-            $host_login_user_client=$host_match_client[0]['host_login_user'];
-            $password_client=$host_match_client[0]['host_login_password'];
-            $ssh_client_client = new SSH2($host_ip_client,$host_ssh_port_client);
+        if (count($host_match_client)!=0){
+            $ssh_client_client=$this->getSSHClient($host_match_client[0]);
         }else{
             return response()->json(
-                ['message' => 'Can not find server info, please check ...']
+                ['message' => 'Can not find client info, please check ...']
             , 404);
         }
 
-        $verify_server=$this->sshConnVerify($ssh_client_server,$host_ip_server,$host_ssh_port_server,$host_login_user_server,$password_server);
-        $verify_client=$this->sshConnVerify($ssh_client_client,$host_ip_client,$host_ssh_port_client,$host_login_user_client,$password_client);
+        // server ibv_rc_pingpong -d mlx5_0 -g 3 
+        // client ibv_rc_pingpong -d pclr_0 -g 1 10.10.10.10
+        $command_server='ibv_rc_pingpong -d '.$rdma_info_server[1].' -n 3 -g '.$rdma_info_server[2];
+        $command_client='ibv_rc_pingpong -d '.$rdma_info_client[1].' -n 3 -g '.$rdma_info_client[2].' '.$rdma_info_server[3];
 
-
-        if(!$verify_server){
-            return response()->json(
-                ['message' => 'Can not connect to server, please check connection or password.']
-            , 404);
-        }elseif(!$verify_client){
-            return response()->json(
-                ['message' => 'Can not connect to client, please check connection or password.']
-            , 404);
+        
+        $ssh_client_server->enablePTY();
+        $ssh_client_server->exec($command_server);
+        $ssh_client_server->setTimeout(10);
+        
+        $ssh_client_client->enablePTY();
+        $ssh_client_client->exec($command_client);
+        $ssh_client_client->setTimeout(10);
+        
+        if($ssh_client_server->isTimeout() || $ssh_client_client->isTimeout()){
+            $ssh_client_server->write("\x03");
+            $ssh_client_client->write("\x03");
         }else{
-            // server ibv_rc_pingpong -d mlx5_0 -g 3 
-            // client ibv_rc_pingpong -d pclr_0 -g 1 10.10.10.10
-            $command_server='ibv_rc_pingpong -d '.$rdma_info_server[1].' -n 3 -g '.$rdma_info_server[2];
-            $command_client='ibv_rc_pingpong -d '.$rdma_info_client[1].' -n 3 -g '.$rdma_info_client[2].' '.$rdma_info_server[3];
-
-            
-            $ssh_client_server->enablePTY();
-            $ssh_client_server->exec($command_server);
-            $ssh_client_server->setTimeout(10);
-            
-            $ssh_client_client->enablePTY();
-            $ssh_client_client->exec($command_client);
-            $ssh_client_client->setTimeout(10);
-            
-            if($ssh_client_server->isTimeout() || $ssh_client_client->isTimeout()){
-                $ssh_client_server->write("\x03");
-                $ssh_client_client->write("\x03");
-            }else{
-                $cmd_res=$ssh_client_client->read();
-                $result_valid=stripos($cmd_res,"3 iters in");
-                if($result_valid!==false) {
-                    $res=$rdma_test_relation->create([
-                        "test_pair_id"=>$data['test_pair_id'], 
-                        "rdma_id_server"=>$rdma_info_server[0],
-                        "rdma_id_client"=>$rdma_info_client[0],
-                    ])->save();
-                    if ($res==1){
-                        $jsonArr['opCode']=true;
-                        $jsonArr['msg']='Test Pair Connect Success';
-                    }
-                }else{
-                    $jsonArr['opCode']=false;
-                    $jsonArr['msg']='Test Pair Connect fail, please check';
+            $cmd_res=$ssh_client_client->read();
+            $result_valid=stripos($cmd_res,"3 iters in");
+            if($result_valid!==false) {
+                $res=$rdma_test_relation->create([
+                    "test_pair_id"=>$data['test_pair_id'], 
+                    "rdma_id_server"=>$rdma_info_server[0],
+                    "rdma_id_client"=>$rdma_info_client[0],
+                ])->save();
+                if ($res==1){
+                    $jsonArr['opCode']=true;
+                    $jsonArr['msg']='Test Pair Connect Success';
                 }
-                $jsonArr['result']=$cmd_res;
-                return $jsonArr;
+            }else{
+                $jsonArr['opCode']=false;
+                $jsonArr['msg']='Test Pair Connect fail, please check';
             }
+            $jsonArr['result']=$cmd_res;
+            return $jsonArr;
         }
     }
 
@@ -1086,8 +1020,14 @@ class RdmaController extends Controller
             'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',
             'rdma_ethernetlat_flag','rdma_ethernetlat_costtime','update_time')->orderBy('update_time','desc')->skip($skipNum)->take($pagesize)->get()->toArray();
         }else{
-            $total=$rdma_test_Info->where('test_identifier','like', '%'.$queryItem.'%')->count();
-            $record=$record=$rdma_test_Info->where('test_identifier','like','%'.$queryItem.'%')->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','test_qp_num','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
+            $matched_records=$rdma_test_Info->where(function($query)use($queryItem){
+                $query->where('test_identifier', 'like', '%'.$queryItem.'%');
+                $query->orWhere('test_pair_id', 'like', '%'.$queryItem.'%');
+                $query->orWhere('server_host_name', 'like', '%'.$queryItem.'%');
+                $query->orWhere('client_host_name', 'like', '%'.$queryItem.'%');
+             });
+            $total=$matched_records->count();
+            $record=$record=$matched_records->select('test_identifier','test_pair_id','test_count_no','test_queue','test_queue_state','bidirection','test_qp_num','server_host_name','server_card_name','server_card_ipv4_addr','server_card_mac_addr','server_ifname','server_gid',
             'client_host_name','client_card_name','client_card_ipv4_addr','client_card_mac_addr','client_ifname','client_gid','rdma_sendbw_flag','rdma_sendbw_costtime',
             'rdma_readbw_flag','rdma_readbw_costtime','rdma_writebw_flag','rdma_writebw_costtime','rdma_atomicbw_flag','rdma_atomicbw_costtime','rdma_ethernetbw_flag','rdma_ethernetbw_costtime',
             'rdma_sendlat_flag','rdma_sendlat_costtime','rdma_readlat_flag','rdma_readlat_costtime','rdma_writelat_flag','rdma_writelat_costtime','rdma_atomiclat_flag','rdma_atomiclat_costtime',

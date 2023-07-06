@@ -42,8 +42,18 @@
         <el-form-item :label="$t('rdmaTest.testQueue')">
             <el-select v-model="form.testQueue" placeholder="please select test queue">
                 <el-option label="default" value="default" />
-                <el-option label="Queue One" value="QueueOne" />
-                <el-option label="Queue Two" value="QueueTwo" />
+                <el-option label="Queue 1" value="Queue_1" />
+                <el-option label="Queue 2" value="Queue_2" />
+                <el-option label="Queue 3" value="Queue_3" />
+                <el-option label="Queue 4" value="Queue_4" />
+                <el-option label="Queue 5" value="Queue_5" />
+                <el-option label="Queue 6" value="Queue_6" />
+                <el-option label="Queue 7" value="Queue_7" />
+                <el-option label="Queue 8" value="Queue_8" />
+                <el-option label="Queue 9" value="Queue_9" />
+                <el-option label="Queue 10" value="Queue_10" />
+                <el-option label="Queue 11" value="Queue_11" />
+                <el-option label="Queue 12" value="Queue_12" />
             </el-select>
         </el-form-item>
     </el-form>

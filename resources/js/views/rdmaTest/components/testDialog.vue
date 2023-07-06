@@ -38,7 +38,7 @@
             }
         },
         setup(props,{emit}){
-            console.log('props.dialogTableValue:',props.dialogTableValue);
+            // console.log('props.dialogTableValue:',props.dialogTableValue);
             const {t}=useI18n()
             const percent=ref(50)
 
@@ -48,7 +48,7 @@
 
             watch(()=>props.dialogTableValue,()=>{
                 percent.value=props.dialogTableValue.msg==t('rdmaTest.inTest')?60:100
-                console.log('percent',percent);
+                // console.log('percent',percent);
             },{deep:true,immediate:true})
 
             return {
