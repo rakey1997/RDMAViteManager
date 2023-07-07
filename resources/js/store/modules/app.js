@@ -62,16 +62,18 @@ export default {
             return new Promise((resolve, reject) => {
                 loginApi(loginForm)
                     .then((res) => {
-                        commit("setUserID", res.userid);
-                        commit("setRole", res.role);
-                        commit("setToken", res.api_token);
-                        setTokenTime();
-                        router.replace("/");
-                        ElMessage({
-                            message: "登录成功",
-                            type: "success",
-                        });
-                        resolve();
+                        if (res.opCode) {
+                            commit("setUserID", res.userid);
+                            commit("setRole", res.role);
+                            commit("setToken", res.api_token);
+                            setTokenTime();
+                            router.replace("/");
+                            ElMessage({
+                                message: "登录成功",
+                                type: "success",
+                            });
+                            resolve();
+                        }
                     })
                     .catch((err) => {
                         reject(err);
