@@ -106,7 +106,7 @@
 
             const initGetRdmaList=async(queryflag)=>{
                 const res=await getRdma({"host_name":host_name.value,"whole":queryflag})
-                tableData.value=res.cards
+                tableData.value=res.rdma
                 total.value=res.total
 
                 if(queryflag){

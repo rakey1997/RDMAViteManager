@@ -29,7 +29,7 @@ Route::middleware('WebToken')->group(function () {
 
     Route::get('/host', [RdmaController::class,'returnHost']);
     Route::post('/hosts', [RdmaController::class,'addHost']);
-    Route::put('/editHost/{id}', [RdmaController::class,'editHost']);
+    Route::put('/editHost/{id}', [RdmaController::class,'updateHost']);
     Route::put('/updatePass/{id}', [RdmaController::class,'updateHostPass']);
     Route::put('/host/{id}/state/{state}', [RdmaController::class,'updateHostState']);
     Route::delete('/host/{id}', [RdmaController::class,'deleteHost']);
