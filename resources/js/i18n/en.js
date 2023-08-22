@@ -174,6 +174,7 @@ export default {
         confirmButton: "Confirm",
         cancelButton: "Cancel",
         doneDelele: "Done deleting",
+        failDelele: "Fail to Delete",
         cancelDelete: "Cancel deletion",
         noneSelect: "No record selected, please select",
         modifyMTU: "Modify MTU value",

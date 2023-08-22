@@ -172,6 +172,7 @@ export default {
         confirmButton: "确认",
         cancelButton: "取消",
         doneDelele: "完成删除",
+        failDelele: "删除失败",
         cancelDelete: "取消删除",
         noneSelect: "未选择记录，请选择",
         modifyMTU: "修改MTU数值",

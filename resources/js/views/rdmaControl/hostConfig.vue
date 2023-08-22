@@ -130,7 +130,6 @@
                         type: 'success',
                     })
                 }
-                console.log("shibai1")
                 initGetHostsList()
             }
 

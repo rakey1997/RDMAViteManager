@@ -71,7 +71,7 @@
 
             const tableData=ref([])
             const DeleteRdma=async(id)=>{
-                console.log(id);
+                // console.log(id);
                 ElMessageBox.confirm(
                     t('dialog.deleteRdmaBody'),
                     t('dialog.deleteTitle'),
@@ -82,12 +82,19 @@
                 }
                 )
                 .then(async () => {
-                    await delRdma(id)
-                    ElMessage({
-                        type: 'success',
-                        message: t('dialog.doneDelele'),
-                    })
-                    initGetRdmaList(true)
+                    const res=await delRdma(id)
+                    if(res.opCode){
+                        ElMessage({
+                            type: 'success',
+                            message: t('dialog.doneDelele'),
+                        })
+                        initGetRdmaList(true)
+                    }else{
+                        ElMessage({
+                            type: 'error',
+                            message: t('dialog.failDelele'),
+                        })
+                    }
                 })
                 .catch(() => {
                 ElMessage({

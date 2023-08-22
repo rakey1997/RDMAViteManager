@@ -85,7 +85,8 @@
 
             const validatePass = (_, value, callback) => {
                         if (value === '') {
-                            callback(new Error(t('hostConfigForm.password')))
+                            // callback(new Error(t('hostConfigForm.password')))
+                            callback()
                         } else {
                             if (ruleForm.checkPass !== '') {
                             if (!ruleFormRef.value) return
@@ -96,7 +97,8 @@
                         }
             const validatePass2 = (_, value, callback) => {
                     if (value === '') {
-                        callback(new Error(t('dialog.checkPass')))
+                        // callback(new Error(t('dialog.checkPass')))
+                        callback()
                     } else if (value !== ruleForm.host_login_password) {
                         callback(new Error(t('dialog.passMismatch')))
                     } else {
