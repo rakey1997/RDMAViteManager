@@ -89,11 +89,17 @@
             })
 
             const sendCmdtoHost=(formEl)=>{
-                if (formEl) return formEl.validateField(['query'],async(valid) => {
+                console.log('flag:',flag.value);
+                ElMessage({
+                                    message: t('cmdExcute.noright'),
+                                    type: 'error',
+                                })
+                if(!flag.value){
+                    if (formEl) return formEl.validateField(['query'],async(valid) => {
                     if (valid) {
                             queryForm.host_name=props.host_name
-                            console.log('host_name:',props.host_name);
-                            console.log('queryForm:',queryForm);
+                            // console.log('host_name:',props.host_name);
+                            // console.log('queryForm:',queryForm);
                             const res=await excuteCmdFromSSH(queryForm)
                             if (res.opCode){
                                 ElMessage({
@@ -108,7 +114,7 @@
                             }
                             systemLogform.status=res.cmdState
                             systemLogform.jsonResult={"result":res.result}
-                            console.log('systemLogform:',systemLogform);
+                            // console.log('systemLogform:',systemLogform);
                         }else{
                             ElMessage({
                                     message: t('cmdExcute.invalidCmd'),
@@ -116,6 +122,7 @@
                                 })
                         }
                     })
+                }
                 }
 
             return{

@@ -193,6 +193,7 @@ export default {
         blankCmd: "请输入需要执行的命令",
         forbidCmd: "不支持危险操作命令",
         invalidCmd: "输入命令非法",
+        noright: "没有执行权限",
     },
     rdmaTest: {
         testTitle: "RDMA测试配置",

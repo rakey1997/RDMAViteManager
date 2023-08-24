@@ -14,8 +14,8 @@
             <el-button type="primary" icon="UploadFilled" @click="initGetResult(false)" >{{$t('rdmaTest.refreshBtn')}}</el-button>
             <el-button type="primary" icon="DeleteFilled" color="red" @click="batchDelete" :disabled="flag">{{$t('rdmaTest.batchDelete')}}</el-button>
             <el-button type="primary" icon="UploadFilled" @click="startTest" :disabled="(flag)" >{{$t('rdmaTest.startTestBtn')}}</el-button>
-            <el-button type="primary" icon="UploadFilled" @click="toExcel" :disabled="(flag)" >{{$t('rdmaTest.exportBtn')}}</el-button>
-            <el-button type="primary" icon="UploadFilled" @click="openResultUrl" :disabled="(flag)" >{{$t('rdmaTest.openResultUrl')}}</el-button>
+            <el-button type="primary" icon="UploadFilled" @click="toExcel" >{{$t('rdmaTest.exportBtn')}}</el-button>
+            <el-button type="primary" icon="UploadFilled" @click="openResultUrl" >{{$t('rdmaTest.openResultUrl')}}</el-button>
         </el-form-item>
     </el-row>
     <h2 style="text-align: center;width: 90%;">{{$t('rdmaTest.testStatusTitle')}}</h2>
@@ -138,7 +138,6 @@
             const openResultUrl=()=>{
                 const cleanUrl = store.getters.testUrl.replace(/"/g, '');
                 window.open(cleanUrl,'_blank');
-                newWindow.opener = null;
             }
 
             const toExcel=()=>{

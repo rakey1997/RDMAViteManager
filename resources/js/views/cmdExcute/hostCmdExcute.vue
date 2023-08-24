@@ -24,7 +24,7 @@
         setup() {
             const {t}=useI18n()
             const store=useStore()
-            let hostNameArray = store.getters.hostName.split(',')
+            let hostNameArray = JSON.parse(store.getters.hostName)
             const options=hostNameArray.map(obj => {return {value:obj,label:obj}})
             const host_name = ref(options[0]['value'])
 

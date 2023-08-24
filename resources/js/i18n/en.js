@@ -133,7 +133,7 @@ export default {
         Adap_State: "RDMA adaptive adjustment state",
         //Caps: "RDMA Capabilities",
         Status: "RDMA working status",
-        Update_Time: "Last refresh time",
+        Update_time: "Last refresh time",
         Action: "Action",
     },
     rdmaDialog: {
@@ -196,6 +196,7 @@ export default {
         blankCmd: "Please enter the command that needs to be executed",
         forbidCmd: "Dangerous operation commands are not supported",
         invalidCmd: "The input command is illegal",
+        noright: "No right to execute",
     },
     rdmaTest: {
         testTitle: "RDMA Test Configuration",
@@ -206,7 +207,7 @@ export default {
         unidirection: "unidirectional",
         inTest: "Testing",
         waitResult: "Please wait a moment",
-        checkTQ: "Generate to be testing Host Group",
+        checkTQ: "Generate Test Host Group",
         testServer: "Test Server",
         testClient: "Test Client",
         delBtn: "Delete the waiting-testing Host Group",

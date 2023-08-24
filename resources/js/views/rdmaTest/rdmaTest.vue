@@ -8,7 +8,7 @@
             <el-cascader v-model="form.client" :options="menu_options" :props="props" clearable separator="-->" />
         </el-form-item>
         <el-form-item>
-            <el-button @click="checkTQ">{{$t('rdmaTest.checkTQ')}}</el-button>
+            <el-button @click="checkTQ" :disabled="flag || (!form.client || !form.server)||(form.client.length == 0 || form.server.length == 0)">{{$t('rdmaTest.checkTQ')}}</el-button>
         </el-form-item>
     </el-form>
     <testDialog v-model="dialogVisible" 
