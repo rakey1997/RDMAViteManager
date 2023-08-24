@@ -20,7 +20,7 @@
     import driver from "./components/driver/index.vue";
 
     export default {
-        name:'DNSHeader',
+        name:'RDMAHeader',
         components:{hamburger,breadcrumb,avatar,lang,screenful,driver}
     }
 </script>

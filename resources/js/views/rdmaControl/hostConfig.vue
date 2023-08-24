@@ -6,11 +6,11 @@
                     clearable 
                     v-model="queryForm.query" 
                     :placeholder="$t('table.placeholder')" 
-                    v-on:keyup.enter="initGetHostsList"
+                    v-on:keyup.enter="initGetHostsList(false)"
                     >
                 </el-input>
             </el-col>
-            <el-button type="primary" icon="Search" @click="initGetHostsList">{{$t('table.search')}}</el-button>
+            <el-button type="primary" icon="Search" @click="initGetHostsList(false)">{{$t('table.search')}}</el-button>
             <el-button type="primary" @click="toggleSelection()">{{$t('table.clearSel')}}</el-button>
             <el-button type="primary" @click="handleAddRecord()" :disabled="flag">{{$t('hostTable.addhost')}}</el-button>
             <el-button type="primary" icon="DeleteFilled" color="red" @click="batchDelete" :disabled="flag">{{$t('table.batchDelete')}}</el-button>
@@ -41,7 +41,7 @@
         <el-pagination
                 v-model:current-page="queryForm.pagenum"
                 v-model:page-size="queryForm.pagesize"
-                :page-sizes="[10,20,100]"
+                :page-sizes="[5,10,20,100]"
                 :small=false
                 background
                 layout="->,prev, pager, next, jumper, sizes, total"
@@ -54,7 +54,7 @@
             :dialogTitle="dialogTitle" 
             :dialogTableValue="dialogTableValue"
             v-if="dialogVisible"
-            @triggerGetHostsList="initGetHostsList"
+            @triggerGetHostsList="initGetHostsList(true)"
     >
     </hostDialog>
 </template>
@@ -94,32 +94,30 @@
                 return (queryForm.pagenum-1) * queryForm.pagesize+index+1
             }
 
-            const initGetHostsList=async ()=>{
+            const initGetHostsList=async (flag)=>{
                 const res=await getHost(queryForm)
                 tableData.value=res.hosts
                 total.value=res.total
-                //存放服务器信息
-                let hostNameStr=''
-                res.hosts.forEach(element => {
-                    if(element["state"]===1){
-                        hostNameStr+=element["host_name"]+','
-                    }
-                });
-                store.dispatch('app/hostInfo',hostNameStr.substring(0, hostNameStr.length - 1))
-                store.dispatch('app/cardInfo',JSON.stringify(res.card_relation))
-                store.dispatch('app/rdmaInfo',JSON.stringify(res.rdma_relation))
-                store.dispatch('app/cardRdmaInfo',JSON.stringify(res.card_rdma_relation))
+                // let id_arr = selectRecord.map(obj => {return obj.id})
+                if(flag){
+                    //存放服务器信息
+                    // hosts_str=hosts_str.replace(/\"/g, "")
+                    store.dispatch('app/hostInfo',JSON.stringify(res.hosts_list.map(obj => {return obj.host_name})))
+                    store.dispatch('app/rdmaInfo',JSON.stringify(res.rdma_relation))
+                    store.dispatch('app/cardRdmaInfo',JSON.stringify(res.card_rdma_relation))
+                    store.dispatch('app/testUrl',JSON.stringify(res.url))
+                }
             }
 
             const handleCurrentChange=(pageNum)=>{
                 queryForm.pagenum=pageNum
-                initGetHostsList()
+                initGetHostsList(false)
             }
 
             const handleSizeChange=(pageSize)=>{
                 queryForm.pagenum=1
                 queryForm.pagesize=pageSize
-                initGetHostsList()
+                initGetHostsList(false)
             }
 
             const changeState=async (info)=>{
@@ -130,7 +128,7 @@
                         type: 'success',
                     })
                 }
-                initGetHostsList()
+                initGetHostsList(true)
             }
 
             const handleAddRecord=(row)=>{
@@ -160,7 +158,7 @@
                         type: 'success',
                         message: t('dialog.doneDelele'),
                     })
-                    initGetHostsList()
+                    initGetHostsList(true)
                 })
                 .catch(() => {
                 ElMessage({
@@ -193,7 +191,7 @@
                 }
             }
 
-            initGetHostsList()
+            initGetHostsList(true)
 
             return{
                 flag,

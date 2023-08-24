@@ -122,7 +122,7 @@
             const addRdmaDev=(formEl)=>{
                 // ruleForm.cmd="rdma link add "+ruleForm.rdma_name+" type "+ruleForm.driver_type+" netdev "+ruleForm.card_name
                 ruleForm.cmd="addRdmaDev"
-                console.log(ruleForm);
+                // console.log(ruleForm);
                 excuteCmd('rdma_name',formEl)
             }
             

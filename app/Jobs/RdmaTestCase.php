@@ -18,15 +18,18 @@ class RdmaTestCase implements ShouldQueue
     public $rdmaTest;
     public $cmd;
     public $jsonArr;
+    public $config_vars;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($cmd,$rdmaTest)
+    public function __construct($cmd,$rdmaTest,$config_vars)
     {
         $this->rdmaTest = $rdmaTest;
         $this->cmd = $cmd;
+        $this->config_vars=$config_vars;
     }
 
     /**
@@ -96,28 +99,29 @@ class RdmaTestCase implements ShouldQueue
      *
      * @return void
      */
-    public function handle()
-    {
+    public function handle(){
         $rdma_test_Info=new RdmaTestModel();
         $rdmaTest=$this->rdmaTest;
 
-        $test_identifier=$rdmaTest['test_identifier'];
-        $test_pair_id=$rdmaTest['test_pair_id'];
-        $test_qp_num=$rdmaTest['test_qp_num'];
+        [
+            'test_identifier' => $test_identifier,
+            'test_pair_id' => $test_pair_id,
+            'test_qp_num' => $test_qp_num,
+            'server_host_name' => $host_name_server,
+            'server_host_ip' => $host_ip_server,
+            'server_host_ssh_port' => $host_ssh_port_server,
+            'server_host_login_user' => $host_login_user_server,
+            'server_host_login_password' => $password_server,
+            'client_host_name' => $host_name_client,
+            'client_host_ip' => $host_ip_client,
+            'client_host_ssh_port' => $host_ssh_port_client,
+            'client_host_login_user' => $host_login_user_client,
+            'client_host_login_password' => $password_client,
+        ] = $rdmaTest;
 
-        $host_name_server=$rdmaTest['server_host_name'];
-        $host_ip_server=$rdmaTest['server_host_ip'];
-        $host_ssh_port_server=$rdmaTest['server_host_ssh_port'];
-        $host_login_user_server=$rdmaTest['server_host_login_user'];
-        $password_server=$rdmaTest['server_host_login_password'];
         $ssh_client_server = new SSH2($host_ip_server,$host_ssh_port_server);
         $ssh_client_server_check = new SSH2($host_ip_server,$host_ssh_port_server);
 
-        $host_name_client=$rdmaTest['client_host_name'];
-        $host_ip_client=$rdmaTest['client_host_ip'];
-        $host_ssh_port_client=$rdmaTest['client_host_ssh_port'];
-        $host_login_user_client=$rdmaTest['client_host_login_user'];
-        $password_client=$rdmaTest['client_host_login_password'];
         $ssh_client_client = new SSH2($host_ip_client,$host_ssh_port_client);
         $ssh_client_client_check = new SSH2($host_ip_client,$host_ssh_port_client);
 
@@ -145,7 +149,7 @@ class RdmaTestCase implements ShouldQueue
             $rdma_ipv4_client=$rdmaTest['client_card_ipv4_addr'];
             $rdma_mac_addr_client=$rdmaTest['client_card_mac_addr'];
 
-            $test_file_name=TEST_FILE_PATH.$test_identifier.FILE_NAME_SEP.$test_pair_id.FILE_NAME_SEP.$test_qp_num.FILE_NAME_SEP.$this->cmd.FILE_NAME_SEP.$host_name_server.FILE_NAME_SEP.$rdma_name_server.FILE_NAME_SEP.$host_name_client.FILE_NAME_SEP.$rdma_name_client.FILE_NAME_SEP;
+            $test_file_name=$this->config_vars['TEST_FILE_PATH'].$test_identifier.$this->config_vars['FILE_NAME_SEP'].$test_pair_id.$this->config_vars['FILE_NAME_SEP'].$test_qp_num.$this->config_vars['FILE_NAME_SEP'].$this->cmd.$this->config_vars['FILE_NAME_SEP'].$host_name_server.$this->config_vars['FILE_NAME_SEP'].$rdma_name_server.$this->config_vars['FILE_NAME_SEP'].$host_name_client.$this->config_vars['FILE_NAME_SEP'].$rdma_name_client.$this->config_vars['FILE_NAME_SEP'];
 
             if (stripos($this->cmd,"lat")!==false){
                 //测试时延
@@ -157,7 +161,7 @@ class RdmaTestCase implements ShouldQueue
                 $direction_flag=$rdmaTest['bidirection']==2?"":" -b";   
                 $direction_name=$rdmaTest['bidirection']==2?"undirection":"bidirection";  //是否rdma双向测试，2为单向测试，3为双向测试
                 $qp_flag=" -q ".$test_qp_num;  //默认采用10
-                $test_file_name=$test_file_name.$direction_name.FILE_NAME_SEP;
+                $test_file_name=$test_file_name.$direction_name.$this->config_vars['FILE_NAME_SEP'];
             }
 
             switch ($this->cmd) {
@@ -252,12 +256,16 @@ class RdmaTestCase implements ShouldQueue
             }
             $rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['test_queue_state'=>'3']);
             if($test_result_flag){
-                // sshpass -p "1qaz@WSX" scp /tmp/20230628151550-1-1687936468-ib_atomic_bw-SBL_RDMA03-rxe_0-SBL_RDMA04-rxe_0-undirection-server.log elk@192.168.221.37:/opt/logstash/test_data/server
-                // $uploadServerCmd="sshpass -p LOGSTASH_SERVER_PASSWORD scp -o StrictHostKeyChecking=no ".$test_file_name.'server.log '.LOGSTASH_SERVER_USER."@".LOGSTASH_SERVER_IP.":".LOGSTASH_SERVER_PATH;
-                // $uploadClientCmd="sshpass -p LOGSTASH_SERVER_PASSWORD scp -o StrictHostKeyChecking=no ".$test_file_name.'client.log '.LOGSTASH_SERVER_USER."@".LOGSTASH_SERVER_IP.":".LOGSTASH_CLIENT_PATH;
-                
-                // $ssh_client_server_check->exec($uploadServerCmd);
-                // $ssh_client_client_check->exec($uploadClientCmd);
+                if($this->config_vars['LOGSTASH_ENABLE']==="true"){
+                    var_dump('logstash');
+                    // sshpass -p "1qaz@WSX" scp /tmp/20230628151550-1-1687936468-ib_atomic_bw-SBL_RDMA03-rxe_0-SBL_RDMA04-rxe_0-undirection-server.log elk@192.168.221.37:/opt/logstash/test_data/server
+                    $uploadServerCmd="sshpass -p \LOGSTASH_SERVER_PASSWORD scp -o StrictHostKeyChecking=no ".$test_file_name.'server.log '.$this->config_vars['LOGSTASH_SERVER_USER']."@".$this->config_vars['LOGSTASH_SERVER_IP'].":".$this->config_vars['LOGSTASH_SERVER_PATH'];
+                    $uploadClientCmd="sshpass -p \LOGSTASH_SERVER_PASSWORD scp -o StrictHostKeyChecking=no ".$test_file_name.'client.log '.$this->config_vars['LOGSTASH_SERVER_USER']."@".$this->config_vars['LOGSTASH_SERVER_IP'].":".$this->config_vars['LOGSTASH_CLIENT_PATH'];
+                    var_dump($uploadServerCmd);
+                    var_dump($uploadClientCmd);
+                    $ssh_client_server_check->exec($uploadServerCmd);
+                    $ssh_client_client_check->exec($uploadClientCmd);
+                }
             }
         }
     }
@@ -265,12 +273,5 @@ class RdmaTestCase implements ShouldQueue
     //任务失败的处理过程回调函数,打印返回错误信息
     public function failed(\Exception $exception)
     {
-        // $rdma_test_Info=new RdmaTestModel();
-        // $test_identifier=$this->rdmaTest['test_identifier'];
-        // $test_pair_id=$this->rdmaTest['test_pair_id'];
-        // $rdma_test_Info->where('test_identifier',$test_identifier)->where('test_pair_id',$test_pair_id)->update(['test_queue_state'=>'4']);
-        //php artisan queue:work --once --tries=3
-        // $jsonArr['opCode']=false;
-        // $jsonArr['msg']=$exception->getMessage();
     }
 }

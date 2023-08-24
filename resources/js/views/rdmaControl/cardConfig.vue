@@ -70,7 +70,7 @@
             const dialogTableValue=ref({})
             const flag=ref(store.getters.role!='admin')
            
-            let hostNameArray = store.getters.hostName.split(',')
+            let hostNameArray = JSON.parse(store.getters.hostName)
             const options=hostNameArray.map(obj => {return {value:obj,label:obj}})
             const host_name = ref(options[0]['value'])
 

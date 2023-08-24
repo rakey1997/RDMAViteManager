@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Model\HostModel;
 use App\Models\Model\RdmaTestRelationModel;
 use App\Models\Model\RdmaTestModel;
+use App\Models\Model\ConfigModel;
 
 use App\Models\Model\ViewRdmaParaModel;
 use App\Models\Model\ViewRdmaTestModel;
@@ -306,7 +307,7 @@ class TestsController extends Controller
      * 
      * @return int The total number of tests started.
      */
-    private function unpackAndExecute($rdmaTestList){
+    private function unpackAndExecute($rdmaTestList,$config_vars){
         $startFlag = 0;
         $needTestFlag = "1";
         $tests = [
@@ -328,7 +329,7 @@ class TestsController extends Controller
             foreach ($tests as $flag => $cmd) {
                 if ($rdmaTest[$flag] == $needTestFlag) {
                     ++$startFlag;
-                    RdmaTestCase::dispatch($cmd, $rdmaTest)->onQueue($testQueue);
+                    RdmaTestCase::dispatch($cmd, $rdmaTest,$config_vars)->onQueue($testQueue);
                 }
             }
         }
@@ -352,19 +353,20 @@ class TestsController extends Controller
         $tqInfoList = $data['id_arr'];
         $total = 0;
         $startFlag = 0;
-
+        $config_vars=getConfigPara();
+        
         // No specific test IDs provided, execute all tests in test_queue_state 0
         if (empty($tqInfoList)) {
             $rdmaTestList = $viewRdmaTestInfo->where('test_queue_state', '0')->get()->toArray();
             $rdmaTestInfo->where('test_queue_state', '0')->update(['test_queue_state' => '1']);
-            $total = $this->unpackAndExecute($rdmaTestList);
+            $total = $this->unpackAndExecute($rdmaTestList,$config_vars);
         } else {
             // Execute tests with specific test IDs
             foreach ($tqInfoList as $tqInfo) {
                 $rdmaTestList = $viewRdmaTestInfo->where('test_identifier', $tqInfo[0])
                     ->where('test_pair_id', $tqInfo[1])
                     ->where('test_queue_state', '0')->get()->toArray();
-                $startFlag = $this->unpackAndExecute($rdmaTestList);
+                $startFlag = $this->unpackAndExecute($rdmaTestList,$config_vars);
                 $total += $startFlag;
 
                 $rdmaTestInfo->where('test_identifier', $tqInfo[0])
@@ -387,11 +389,18 @@ class TestsController extends Controller
         $jsonArr = []; // Initialize an empty array for the JSON response
         $rdmaTestInfo = new ViewRdmaTestModel(); // Create a new instance of ViewRdmaTestModel
 
+        $flag = $request->input('flag'); // Get the test url query flag from the request
         $queryItem = $request->input('query'); // Get the query parameter from the request
         $pagenum = $request->input('pagenum'); // Get the pagenum parameter from the request
         $pageSize = $request->input('pagesize'); // Get the pagesize parameter from the request
 
         $skipNum = ($pagenum - 1) * $pageSize; // Calculate the number of records to skip
+
+        if($flag){
+            $config_Info = new ConfigModel();
+            $test_url=$config_Info->where('key', 'KIBANA_URL')->first();
+            $jsonArr['url'] = $test_url->value; // Add test url to the JSON response
+        }
 
         $query = $rdmaTestInfo
             ->when($queryItem, function ($query, $queryItem) {

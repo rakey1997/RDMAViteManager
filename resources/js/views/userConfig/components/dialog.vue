@@ -51,7 +51,7 @@
     import { isInclude } from "../../../utils/filters";
 
     export default {
-        name:'DNSDialog',
+        name:'userDialog',
         emits: ['update:modelValue','triggerGetUsersList'],
         props:{
             dialogTitle:{

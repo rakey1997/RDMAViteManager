@@ -8,7 +8,7 @@
         :class="{hidderContainer:!$store.getters.siderType}"
         >
         <el-header>
-            <DNSHeader />
+            <RDMAHeader />
         </el-header>
         <el-main>
             <router-view/>
@@ -19,14 +19,14 @@
 
 <script>
     import Menu from "./Menu/index.vue";
-    import DNSHeader from "./Header/index.vue";
+    import RDMAHeader from "./Header/index.vue";
     import { computed } from '@vue/runtime-core';
     import variables from '../../../css/styles/global.module.scss';
     import { useStore } from 'vuex';
 
     export default {
         name:'layout',
-        components:{Menu,DNSHeader},
+        components:{Menu,RDMAHeader},
         setup(){
             const store=useStore()
             const asideWidth=computed(()=>{

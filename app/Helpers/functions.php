@@ -3,13 +3,13 @@
 /*
  * Constants
  */
- define('FILE_NAME_SEP', '-');  //文件名之间的分隔符号
- define('TEST_FILE_PATH', '\/tmp\/');  //保存文件目录
- define('LOGSTASH_SERVER_IP', '192.168.236.52');  //采集文件服务器ip
- define('LOGSTASH_SERVER_USER', 'elk');  //采集文件服务器用户名
- define('LOGSTASH_SERVER_PASSWORD', '1qaz@WSX');  //采集文件服务器密码
- define('LOGSTASH_SERVER_PATH', '\/opt\/logstash\/test_data\/server');  //采集服务器服务端日志保存记录
- define('LOGSTASH_CLIENT_PATH', '\/opt\/logstash\/test_data\/client');  //采集服务器客户端日志保存记录
+//  define('FILE_NAME_SEP', '-');  //文件名之间的分隔符号
+//  define('TEST_FILE_PATH', '\/tmp\/');  //保存文件目录
+//  define('LOGSTASH_SERVER_IP', '192.168.236.52');  //采集文件服务器ip
+//  define('LOGSTASH_SERVER_USER', 'elk');  //采集文件服务器用户名
+//  define('LOGSTASH_SERVER_PASSWORD', '1qaz@WSX');  //采集文件服务器密码
+//  define('LOGSTASH_SERVER_PATH', '\/opt\/logstash\/test_data\/server');  //采集服务器服务端日志保存记录
+//  define('LOGSTASH_CLIENT_PATH', '\/opt\/logstash\/test_data\/client');  //采集服务器客户端日志保存记录
 
 use phpseclib3\Net\SSH2;
 
@@ -17,9 +17,21 @@ use App\Models\Model\CardModel;
 use App\Models\Model\RdmaInfoModel;
 use App\Models\Model\RdmaParaModel;
 
+use App\Models\Model\ConfigModel;
 use App\Models\Model\ViewCardModel;
 use App\Models\Model\ViewRdmaInfoModel;
 use App\Models\Model\ViewRdmaParaModel;
+
+function getConfigPara(){
+    $config_Info = new ConfigModel();
+    $test_para=$config_Info->where('kind', 'Test_Setting')->select('key','value')->get();
+    $global_vars = array();
+
+    foreach ($test_para as $para) {
+        $global_vars[$para->key] = $para->value;
+    }
+    return $global_vars;
+}
 
 /**
  * Get the command execution result.

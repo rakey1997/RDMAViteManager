@@ -45,7 +45,7 @@ class RdmaController extends Controller
         // Check the value of whole
         if ($whole == "true") {
             // Return all RDMA data
-            $cardRelation=$viewRdmaModel->where('host_state',1)->orderBy('update_time','desc')->select('host_name',DB::raw('group_concat(card_name)'))->groupBy('host_name')->get()->toArray(); 
+            // $cardRelation=$viewRdmaModel->where('host_state',1)->orderBy('update_time','desc')->select('host_name',DB::raw('group_concat(card_name)'))->groupBy('host_name')->get()->toArray(); 
             $rdmaRelation=$viewRdmaModel->where('host_state',1)->orderBy('update_time','desc')->select('host_name',DB::raw('group_concat(ifname)'))->groupBy('host_name')->get()->toArray(); 
             $cardRdmaRelation=$viewRdmaModel->where('host_state',1)->orderBy('update_time','desc')->select('host_name','card_name',DB::raw('group_concat(ifname)'))->groupBy('host_name','card_name')->get()->toArray(); 
         } 
@@ -62,7 +62,7 @@ class RdmaController extends Controller
         }
 
         // Store the card relation information in the 'cardRelation' field of JSON array
-        $jsonArr['card_relation']=$cardRelation;
+        // $jsonArr['card_relation']=$cardRelation;
         $jsonArr['rdma_relation']=$rdmaRelation;
         $jsonArr['card_rdma_relation']=$cardRdmaRelation;
         // Set opCode as true

@@ -12,7 +12,7 @@ export default {
         siderType: true,
         lang: localStorage.getItem("lang") || "zh",
         hostname: localStorage.getItem("hostname") || "",
-        cardname: localStorage.getItem("cardname") || "",
+        testUrl: localStorage.getItem("testUrl") || "",
         rdmaname: localStorage.getItem("rdmaname") || "",
         cardRdmaName: localStorage.getItem("cardRdmaName") || "",
         testHostPair: localStorage.getItem("testHostPair") || [],
@@ -40,9 +40,9 @@ export default {
             state.hostname = hostname;
             localStorage.setItem("hostname", hostname);
         },
-        setCardName(state, cardname) {
-            state.cardname = cardname;
-            localStorage.setItem("cardname", cardname);
+        setTestUrl(state, testUrl) {
+            state.testUrl = testUrl;
+            localStorage.setItem("testUrl", testUrl);
         },
         setRdmaName(state, rdmaname) {
             state.rdmaname = rdmaname;
@@ -85,7 +85,7 @@ export default {
             commit("setRole", "");
             commit("setToken", "");
             commit("setHost", "");
-            commit("setCardName", "");
+            commit("setTestUrl", "");
             commit("setRdmaName", "");
             commit("setCardRdmaName", "");
             // commit("setTestHostPair", "");
@@ -96,8 +96,8 @@ export default {
         hostInfo({ commit }, hostNameStr) {
             commit("setHost", hostNameStr);
         },
-        cardInfo({ commit }, cardNameStr) {
-            commit("setCardName", cardNameStr);
+        testUrl({ commit }, testUrlStr) {
+            commit("setTestUrl", testUrlStr);
         },
         rdmaInfo({ commit }, rdmaNameStr) {
             commit("setRdmaName", rdmaNameStr);

@@ -8,6 +8,7 @@ use App\Http\Controllers\CardsController;
 
 use App\Models\Model\HostModel;
 use App\Models\Model\CardModel;
+use App\Models\Model\ConfigModel;
 use App\Models\Model\ViewRdmaParaModel;
 
 class HostsController extends Controller
@@ -19,8 +20,6 @@ class HostsController extends Controller
      * @return \Illuminate\Http\Response
      */
     protected function returnHost(Request $request){
-        $jsonArr = array();
-    
         $hostName = $request->input('query');
         $pagenum = $request->input('pagenum');
         $pagesize = $request->input('pagesize');
@@ -28,8 +27,21 @@ class HostsController extends Controller
         $skipNum = ($pagenum - 1) * $pagesize;
     
         $host_Info = new HostModel();
+        $config_Info = new ConfigModel();
         $rdma_Para = new ViewRdmaParaModel();
-    
+
+        $test_url=$config_Info->where('key', 'KIBANA_URL')->first();
+
+        $jsonArr = [
+            'opCode' => true,
+            'hosts' => [],
+            'hosts_list' => [],
+            'rdma_relation' => [],
+            'card_rdma_relation' => [],
+            'url' => $test_url->value,
+            'total' => 0,
+        ];
+        
         if ($hostName == ''){
             // If hostName is empty, retrieve all records
             $total = $host_Info->count();
@@ -42,9 +54,9 @@ class HostsController extends Controller
         } else {
             // If hostName is provided, retrieve records matching the host name
             $total = $host_Info->where('host_name', 'like', '%'.$hostName.'%')->count();
-            $record = $host_Info->select('id', 'host_name', 'host_ip', 'host_ssh_port', 'host_login_user', 'state', 'update_time')
+            $record = $host_Info->where('host_name', 'like', '%'.$hostName.'%')
+                ->select('id', 'host_name', 'host_ip', 'host_ssh_port', 'host_login_user', 'state', 'update_time')
                 ->orderBy('update_time', 'desc')
-                ->where('host_name', 'like', '%'.$hostName.'%')
                 ->skip($skipNum)
                 ->take($pagesize)
                 ->get()
@@ -52,12 +64,18 @@ class HostsController extends Controller
         }
     
         // Retrieve related card and RDMA information
-        $card_relation = $rdma_Para->where('host_state', 1)
-            ->orderBy('update_time', 'desc')
-            ->select('host_name', DB::raw('group_concat(card_name)'))
-            ->groupBy('host_name')
-            ->get()
-            ->toArray();
+        // $card_relation = $rdma_Para->where('host_state', 1)
+        //     ->orderBy('update_time', 'desc')
+        //     ->select('host_name', DB::raw('group_concat(card_name)'))
+        //     ->groupBy('host_name')
+        //     ->get()
+        //     ->toArray();
+        $hosts_list=$rdma_Para->where('host_state', 1)
+                              ->select('host_name')
+                              ->distinct()
+                              ->orderBy('update_time', 'desc')
+                              ->get()
+                              ->toArray();
         $rdma_relation = $rdma_Para->where('host_state', 1)
             ->orderBy('update_time', 'desc')
             ->select('host_name', DB::raw('group_concat(ifname)'))
@@ -70,25 +88,20 @@ class HostsController extends Controller
             ->groupBy('host_name', 'card_name')
             ->get()
             ->toArray();
-    
+
         // Prepare the JSON response array
-        $jsonArr['pagenum'] = $pagenum;
-        $jsonArr['pagesize'] = $pagesize;
-        $jsonArr['total'] = $total;
         if (!empty($record)){
-            $jsonArr['hosts'] = $record;
-            $jsonArr['card_relation'] = $card_relation;
-            $jsonArr['rdma_relation'] = $rdma_relation;
-            $jsonArr['card_rdma_relation'] = $card_rdma_relation;
-            $jsonArr['total'] = $total;
-        } else {
-            $jsonArr['hosts'] = [];
-            $jsonArr['card_relation'] = [];
-            $jsonArr['rdma_relation'] = [];
-            $jsonArr['total'] = 0;
-        }
-        $jsonArr['opCode'] = true;
-    
+            $jsonArr = [
+                'opCode' => true,
+                'hosts' => $record,
+                'hosts_list' => $hosts_list,
+                'rdma_relation' => $rdma_relation,
+                'card_rdma_relation' => $card_rdma_relation,
+                'url' => $test_url->value,
+                'total' => $total,
+            ];
+        } 
+
         return $jsonArr;
     }
 

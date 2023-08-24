@@ -6,12 +6,12 @@
                 clearable 
                 v-model="rdmaQueryForm.query" 
                 :placeholder="$t('rdmaTest.placeholder')" 
-                v-on:keyup.enter="initGetResult"
+                v-on:keyup.enter="initGetResult(false)"
                 >
             </el-input>
         </el-col>
         <el-form-item class="btn">
-            <el-button type="primary" icon="UploadFilled" @click="initGetResult" >{{$t('rdmaTest.refreshBtn')}}</el-button>
+            <el-button type="primary" icon="UploadFilled" @click="initGetResult(false)" >{{$t('rdmaTest.refreshBtn')}}</el-button>
             <el-button type="primary" icon="DeleteFilled" color="red" @click="batchDelete" :disabled="flag">{{$t('rdmaTest.batchDelete')}}</el-button>
             <el-button type="primary" icon="UploadFilled" @click="startTest" :disabled="(flag)" >{{$t('rdmaTest.startTestBtn')}}</el-button>
             <el-button type="primary" icon="UploadFilled" @click="toExcel" :disabled="(flag)" >{{$t('rdmaTest.exportBtn')}}</el-button>
@@ -82,32 +82,34 @@
             let id_arr=[]
 
             const flag=ref(store.getters.role!='admin')
-
             const rdmaQueryForm=reactive({
                 query:'',
                 pagenum: 1,
-                pagesize: 10
+                pagesize: 10,
+                flag:false,
             })
 
             const multipleTableRef=ref(null)
 
-            const initGetResult=async()=>{
+            const initGetResult=async(url_flag)=>{
+                rdmaQueryForm.flag=url_flag
                 const res=await getResult(rdmaQueryForm)
                 if(res.opCode){
                     tableData.value=res.record
                     total.value=res.total
+                    url_flag?store.dispatch('app/testUrl',JSON.stringify(res.url)):""
                 }
             }
 
             const handleCurrentChange=(pageNum)=>{
                 rdmaQueryForm.pagenum=pageNum
-                initGetResult()
+                initGetResult(false)
             }
 
             const handleSizeChange=(pageSize)=>{
                 rdmaQueryForm.pagenum=1
                 rdmaQueryForm.pagesize=pageSize
-                initGetResult()
+                initGetResult(false)
             }
 
             const selectable=(row,_)=>{
@@ -134,7 +136,9 @@
             }
 
             const openResultUrl=()=>{
-                window.open("http://192.168.236.111:5601/app/visualize",'_blank');
+                const cleanUrl = store.getters.testUrl.replace(/"/g, '');
+                window.open(cleanUrl,'_blank');
+                newWindow.opener = null;
             }
 
             const toExcel=()=>{
@@ -167,7 +171,7 @@
                 if (id_arr.length!==0){
                     const res=await delTQ({"id_arr":id_arr})
                     checkFlag(res)
-                    initGetResult()
+                    initGetResult(false)
                     id_arr=[]
                 }else{
                     ElMessage({
@@ -203,10 +207,10 @@
                     const res=await excuteTest({"id_arr":id_arr})
                     checkFlag(res)
                 }
-                initGetResult()
+                initGetResult(false)
             }
 
-            initGetResult()
+            initGetResult(true)
 
             return{
                 rdmaQueryForm,

@@ -42,7 +42,7 @@
 </template>
 
 <script>
-    import { ref,reactive } from '@vue/reactivity';
+    import { ref } from '@vue/reactivity';
     import { rdmaOptions } from "./options";
     import {useStore} from "vuex";
     import { useI18n } from "vue-i18n";
@@ -58,16 +58,9 @@
             const total=ref()
             const flag=ref(store.getters.role!='admin')
 
-            let hostNameArray = store.getters.hostName.split(',')
+            let hostNameArray = JSON.parse(store.getters.hostName)
             const options=hostNameArray.map(obj => {return {value:obj,label:obj}})
             const host_name = ref(options[0]['value'])
-
-            // const card_name = ref('')
-            // let card_options=reactive({})
-            // let cardOptions = JSON.parse(store.getters.hostCardList)
-            // let cardNameArray = cardOptions[host_name].split(',')
-            // card_options=cardNameArray.map(obj => {return {value:obj,label:obj}})
-            // card_name = ref(card_options[0])
 
             const tableData=ref([])
             const DeleteRdma=async(id)=>{
@@ -117,14 +110,14 @@
                 total.value=res.total
 
                 if(queryflag){
-                    store.dispatch('app/cardInfo',JSON.stringify(res.card_relation))
+                    // store.dispatch('app/cardInfo',JSON.stringify(res.card_relation))
                     store.dispatch('app/rdmaInfo',JSON.stringify(res.rdma_relation))
                     store.dispatch('app/cardRdmaInfo',JSON.stringify(res.card_rdma_relation))
                 }
             }
 
 
-            initGetRdmaList(false)
+            initGetRdmaList(true)
 
             return{
                 flag,
