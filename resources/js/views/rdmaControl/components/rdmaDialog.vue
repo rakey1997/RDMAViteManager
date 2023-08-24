@@ -137,7 +137,7 @@
                                     type: 'success',
                                 })
                         }else{
-                            console.log(ruleForm);
+                            // console.log(ruleForm);
                             res=await excuteCmdFromSSH(ruleForm)
                         }
                         if (res.opCode){

@@ -89,40 +89,41 @@
             })
 
             const sendCmdtoHost=(formEl)=>{
-                console.log('flag:',flag.value);
-                ElMessage({
-                                    message: t('cmdExcute.noright'),
-                                    type: 'error',
-                                })
-                if(!flag.value){
+                // console.log('flag:',flag.value);
+                if(flag.value){
+                    ElMessage({
+                            message: t('cmdExcute.noright'),
+                            type: 'error',
+                            })
+                }else{
                     if (formEl) return formEl.validateField(['query'],async(valid) => {
-                    if (valid) {
-                            queryForm.host_name=props.host_name
-                            // console.log('host_name:',props.host_name);
-                            // console.log('queryForm:',queryForm);
-                            const res=await excuteCmdFromSSH(queryForm)
-                            if (res.opCode){
-                                ElMessage({
-                                    message: t('response.success'),
-                                    type: 'success',
-                                })
+                        if (valid) {
+                                queryForm.host_name=props.host_name
+                                // console.log('host_name:',props.host_name);
+                                // console.log('queryForm:',queryForm);
+                                const res=await excuteCmdFromSSH(queryForm)
+                                if (res.opCode){
+                                    ElMessage({
+                                        message: t('response.success'),
+                                        type: 'success',
+                                    })
+                                }else{
+                                    ElMessage({
+                                    message: t('response.fail'),
+                                    type: 'error',
+                                    })
+                                }
+                                systemLogform.status=res.cmdState
+                                systemLogform.jsonResult={"result":res.result}
+                                // console.log('systemLogform:',systemLogform);
                             }else{
                                 ElMessage({
-                                message: t('response.fail'),
-                                type: 'error',
-                                })
+                                        message: t('cmdExcute.invalidCmd'),
+                                        type: 'error',
+                                    })
                             }
-                            systemLogform.status=res.cmdState
-                            systemLogform.jsonResult={"result":res.result}
-                            // console.log('systemLogform:',systemLogform);
-                        }else{
-                            ElMessage({
-                                    message: t('cmdExcute.invalidCmd'),
-                                    type: 'error',
-                                })
-                        }
-                    })
-                }
+                        })
+                    }
                 }
 
             return{
