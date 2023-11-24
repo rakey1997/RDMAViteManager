@@ -107,6 +107,7 @@ class RdmaTestCase implements ShouldQueue
             'test_identifier' => $test_identifier,
             'test_pair_id' => $test_pair_id,
             'test_qp_num' => $test_qp_num,
+            'test_port_num' => $test_port_num,
             'server_host_name' => $host_name_server,
             'server_host_ip' => $host_ip_server,
             'server_host_ssh_port' => $host_ssh_port_server,
@@ -149,7 +150,7 @@ class RdmaTestCase implements ShouldQueue
             $rdma_ipv4_client=$rdmaTest['client_card_ipv4_addr'];
             $rdma_mac_addr_client=$rdmaTest['client_card_mac_addr'];
 
-            $test_file_name=$this->config_vars['TEST_FILE_PATH'].$test_identifier.$this->config_vars['FILE_NAME_SEP'].$test_pair_id.$this->config_vars['FILE_NAME_SEP'].$test_qp_num.$this->config_vars['FILE_NAME_SEP'].$this->cmd.$this->config_vars['FILE_NAME_SEP'].$host_name_server.$this->config_vars['FILE_NAME_SEP'].$rdma_name_server.$this->config_vars['FILE_NAME_SEP'].$host_name_client.$this->config_vars['FILE_NAME_SEP'].$rdma_name_client.$this->config_vars['FILE_NAME_SEP'];
+            $test_file_name=$this->config_vars['TEST_FILE_PATH'].$test_identifier.$this->config_vars['FILE_NAME_SEP'].$test_pair_id.$this->config_vars['FILE_NAME_SEP'].$test_qp_num.$this->config_vars['FILE_NAME_SEP'].$test_port_num.$this->config_vars['FILE_NAME_SEP'].$this->cmd.$this->config_vars['FILE_NAME_SEP'].$host_name_server.$this->config_vars['FILE_NAME_SEP'].$rdma_name_server.$this->config_vars['FILE_NAME_SEP'].$host_name_client.$this->config_vars['FILE_NAME_SEP'].$rdma_name_client.$this->config_vars['FILE_NAME_SEP'];
 
             if (stripos($this->cmd,"lat")!==false){
                 //测试时延
@@ -170,16 +171,16 @@ class RdmaTestCase implements ShouldQueue
                     // sudo ib_atomic_bw -A FETCH_AND_ADD -m 4096 -d mlx5_2 -F -q 1
                     // #10.10.10.20上运行
                     // sudo ib_atomic_bw -A FETCH_AND_ADD -m 4096 -d mlx5_0 -F -q 1 10.10.10.10
-                    $command_check_server=$this->cmd.' -F -d '.$rdma_name_server.' -q '.$test_qp_num.' -m 4096 -A FETCH_AND_ADD'.$direction_flag;
-                    $command_check_client=$this->cmd.' -F -d '.$rdma_name_client.' -q '.$test_qp_num.' -m 4096 -A FETCH_AND_ADD '.$direction_flag.$rdma_ipv4_server;
+                    $command_check_server=$this->cmd.' -F -d '.$rdma_name_server.' -q '.$test_qp_num.' -p '.$test_port_num.' -m 4096 -A FETCH_AND_ADD'.$direction_flag;
+                    $command_check_client=$this->cmd.' -F -d '.$rdma_name_client.' -q '.$test_qp_num.' -p '.$test_port_num.' -m 4096 -A FETCH_AND_ADD '.$direction_flag.$rdma_ipv4_server;
                     break;
                 case 'ib_atomic_lat':
                     // #10.10.10.10上运行
                     // sudo ib_atomic_lat -F -d mlx5_2 --report_gbits
                     // #10.10.10.20上运行
                     // sudo ib_atomic_lat -F -d mlx5_0 --report_gbits 10.10.10.10
-                    $command_check_server=$this->cmd.' -F -d '.$rdma_name_server.' --report_gbits';
-                    $command_check_client=$this->cmd.' -F -d '.$rdma_name_client.' --report_gbits '.$rdma_ipv4_server;
+                    $command_check_server=$this->cmd.' -F -d '.$rdma_name_server.' -p '.$test_port_num.' --report_gbits';
+                    $command_check_client=$this->cmd.' -F -d '.$rdma_name_client.' -p '.$test_port_num.' --report_gbits '.$rdma_ipv4_server;
                     break;
                 case 'raw_ethernet_bw':
                     // 1. 测试10.10.10.10至10.10.10.20方向带宽
@@ -187,8 +188,8 @@ class RdmaTestCase implements ShouldQueue
                     // sudo raw_ethernet_bw -d mlx5_2 --client -F -B 10:70:fd:31:ea:dc -E 10:70:fd:31:f3:bc --report_gbits -m 9600 -q 10
                     // #10.10.10.20上运行
                     // sudo raw_ethernet_bw -d mlx5_0 --client -F -B 10:70:fd:31:f3:bc -E 10:70:fd:31:ea:dc --report_gbits -m 9600 -q 10
-                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' --client --report_gbits'.$direction_flag.' -B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
-                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' --client --report_gbits'.$direction_flag.' -E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
+                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' -p '.$test_port_num.' --client --report_gbits'.$direction_flag.' -B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
+                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' -p '.$test_port_num.' --client --report_gbits'.$direction_flag.' -E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
                     break;
                 case 'raw_ethernet_lat':
                     // 1. 测试10.10.10.10至10.10.10.20方向带宽
@@ -196,12 +197,12 @@ class RdmaTestCase implements ShouldQueue
                     // sudo raw_ethernet_lat -d mlx5_2 --server -F -B 10:70:fd:31:ea:dc -E 10:70:fd:31:f3:bc --report_gbits -m 9600
                     // #10.10.10.20上运行
                     // sudo raw_ethernet_lat -d mlx5_0 --client -F -B 10:70:fd:31:f3:bc -E 10:70:fd:31:ea:dc --report_gbits -m 9600
-                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' --server --report_gbits'.$direction_flag.' -B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
-                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' --client --report_gbits'.$direction_flag.' -E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
+                    $command_check_server=$this->cmd.' -F -m 9600 -d '.$rdma_name_server.' -p '.$test_port_num.' --server --report_gbits'.$direction_flag.' -B '.$rdma_mac_addr_server.' -E '.$rdma_mac_addr_client;
+                    $command_check_client=$this->cmd.' -F -m 9600 -d '.$rdma_name_client.' -p '.$test_port_num.' --client --report_gbits'.$direction_flag.' -E '.$rdma_mac_addr_server.' -B '.$rdma_mac_addr_client;
                     break;
                 default:
-                    $command_check_server=$this->cmd.' -a -F -d '.$rdma_name_server.$qp_flag.$direction_flag.' --report_gbits';
-                    $command_check_client=$this->cmd.' -a -F -d '.$rdma_name_client.$qp_flag.$direction_flag.' --report_gbits '.$rdma_ipv4_server;
+                    $command_check_server=$this->cmd.' -a -F -d '.$rdma_name_server.$qp_flag.$direction_flag.' -p '.$test_port_num.' --report_gbits';
+                    $command_check_client=$this->cmd.' -a -F -d '.$rdma_name_client.$qp_flag.$direction_flag.' -p '.$test_port_num.' --report_gbits '.$rdma_ipv4_server;
                     break;
             }
             $command_server=$command_check_server.' 2>&1 >'.$test_file_name.'server.log'.' &';

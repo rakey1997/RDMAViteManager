@@ -10,7 +10,7 @@ export default {
         userConfig: "用户设置",
     },
     login: {
-        title: "RDMA配置管理系统",
+        title: "RDMA配置和测试管理系统",
         btnTitle: "登录",
         warnUserNull: "用户名不能为空",
         warnUserLen: "用户名长度需要3-12位之间",
@@ -231,6 +231,7 @@ export default {
         batchDelete: "批量删除未放入测试队列的任务",
         testCount: "测试次数",
         qpNum: "测试QP参数",
+        conPort: "测试端口参数",
         testQueue: "测试队列",
         placeholder:
             "要查找的日期，如20230608或0608等;或测试组ID;或服务/客户端主机名",
@@ -244,6 +245,7 @@ export default {
         Test_Queue_State: "测试队列组状态",
         Bidirection: "是否双端测试",
         test_qp_num: "测试QP参数",
+        test_port_num: "测试端口参数",
         Server_Host_Name: "服务端主机名称",
         Server_Card_Name: "服务端网卡名称",
         Server_Card_IPV4_Addr: "服务端网卡IPV4地址",

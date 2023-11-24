@@ -10,7 +10,7 @@ export default {
         userConfig: "User Settings",
     },
     login: {
-        title: "RDMA Configuration Management System",
+        title: "RDMA Configuration and Test Management System",
         btnTitle: "Login",
         warnUserNull: "User name cannot be empty",
         warnUserLen: "The username length needs to be between 3 and 12 digits",
@@ -234,6 +234,7 @@ export default {
         batchDelete: "Batch delete tasks not in test queue",
         testCount: "Test Times",
         qpNum: "QP Num",
+        conPort: "Conn Port",
         testQueue: "Test Queue",
         placeholder:
             "The test Date,format 20230608 or 0608;or Test Group ID;or Server/Client Name",
@@ -247,6 +248,7 @@ export default {
         Test_Queue_State: "Test Queue State",
         Bidirection: "Direction",
         test_qp_num: "QP Num",
+        test_port_num: "Port Num",
         Server_Host_Name: "Server Host Name",
         Server_Card_Name: "Server Card Name",
         Server_Card_IPV4_Addr: "Server Card IPV4 addr",

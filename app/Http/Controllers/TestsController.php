@@ -162,6 +162,7 @@ class TestsController extends Controller
         $testHosts = $data['testHosts'];
         $testCount = $data['testCount'];
         $qpNum = $data['qpNum'];
+        $conPort = $data['conPort'];
         $directions = $data['directions'];
         $testQueue = $data['testQueue'];
 
@@ -197,6 +198,7 @@ class TestsController extends Controller
                     "test_pair_id" => $test_pair_id,
                     "test_count_no" => $no,
                     "test_qp_num" => $qpNum,
+                    "test_port_num" => $conPort,
                     "bidirection" => $directions ? 3 : 2,
                     "rdma_id_server" => $test_relation[0]['rdma_id_server'],
                     "rdma_id_client" => $test_relation[0]['rdma_id_client'],
@@ -417,7 +419,7 @@ class TestsController extends Controller
         $records = $query->select([
             // Select specific columns from the query
             'test_identifier', 'test_pair_id', 'test_count_no', 'test_queue', 'test_queue_state',
-            'bidirection', 'test_qp_num', 'server_host_name', 'server_card_name', 'server_card_ipv4_addr',
+            'bidirection', 'test_qp_num', 'test_port_num','server_host_name', 'server_card_name', 'server_card_ipv4_addr',
             'server_card_mac_addr', 'server_ifname', 'server_gid', 'client_host_name', 'client_card_name',
             'client_card_ipv4_addr', 'client_card_mac_addr', 'client_ifname', 'client_gid', 'rdma_sendbw_flag',
             'rdma_sendbw_costtime', 'rdma_readbw_flag', 'rdma_readbw_costtime', 'rdma_writebw_flag',

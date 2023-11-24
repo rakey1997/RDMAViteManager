@@ -33,6 +33,9 @@
         <el-form-item :label="$t('rdmaTest.qpNum')">
             <el-input v-model.number="form.qpNum" />
         </el-form-item>
+        <el-form-item :label="$t('rdmaTest.conPort')">
+            <el-input v-model.number="form.conPort" />
+        </el-form-item>
         <el-form-item :label="$t('rdmaTest.directions')">
             <el-select v-model="form.directions" placeholder="please select test dierection">
                 <el-option label="unidirection" :value=false />
@@ -116,6 +119,7 @@
                     client: [],
                     count:1,
                     qpNum:10,
+                    conPort:18515,
                     testQueue:"default",
                     })
 
@@ -183,6 +187,7 @@
                 testForm.directions=form.directions
                 testForm.testCount=form.count
                 testForm.qpNum=form.qpNum
+                testForm.conPort=form.conPort
                 testForm.testQueue=form.testQueue
                 const res=await addTQ(testForm)
                 if(res.opCode){

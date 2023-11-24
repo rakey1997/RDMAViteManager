@@ -55,6 +55,12 @@ export const testOptions = [
         width: 100,
     },
     {
+        label: "test_port_num",
+        prop: "test_port_num",
+        sortable: true,
+        width: 100,
+    },
+    {
         label: "Server_Host_Name",
         prop: "server_host_name",
         width: 100,
