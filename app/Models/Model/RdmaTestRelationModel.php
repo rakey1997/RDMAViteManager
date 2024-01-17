@@ -15,5 +15,5 @@ class RdmaTestRelationModel extends Model
     const CREATED_AT = 'create_time';
     const UPDATED_AT = 'update_time';
 
-    protected $fillable = ['test_pair_id','rdma_id_server','rdma_id_client'];
+    protected $fillable = ['test_pair_id','rdma_id_server','rdma_server_state','rdma_id_client','rdma_client_state'];
 }

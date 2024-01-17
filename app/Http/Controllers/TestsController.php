@@ -61,72 +61,89 @@ class TestsController extends Controller
         // Retrieve the input data from the request
         $data = $request->input();
         $serverInfo = $data['server'];
+        $serverState = $data['serverState'];
         $rdmaInfoServer = explode(',', $serverInfo[2]);
-
-        // Find the server host info
-        $hostMatchServer = $hostInfo->where('host_name', $serverInfo[0])->first()->toArray();
-        $serverPrompt = "Can not find server info, please check ...";
-        if ($hostMatchServer) {
-            // Get SSH client for the server
-            $sshClientServer = getSSHClient($hostMatchServer);
-            $serverPrompt = is_string($sshClientServer) ? $sshClientServer : "OK";
-        }
-
         $clientInfo = $data['client'];
+        $clientState = $data['clientState'];
         $rdmaInfoClient = explode(',', $clientInfo[2]);
-
-        // Find the client host info
-        $hostMatchClient = $hostInfo->where('host_name', $clientInfo[0])->first()->toArray();
+        $serverPrompt = "Can not find server info, please check ...";
         $clientPrompt = "Can not find client info, please check ...";
-        if ($hostMatchClient) {
-            // Get SSH client for the client
-            $sshClientClient = getSSHClient($hostMatchClient);
-            $clientPrompt = is_string($sshClientClient) ? $sshClientClient : "OK";
-        }
 
-        if ($serverPrompt === "OK" && $clientPrompt === "OK") {
-            // server ibv_rc_pingpong -d mlx5_0 -g 3 
-            // client ibv_rc_pingpong -d pclr_0 -g 1 10.10.10.10
-            // Construct the server and client commands
-            $commandServer = 'ibv_rc_pingpong -d ' . $rdmaInfoServer[1] . ' -n 3 -g ' . $rdmaInfoServer[2];
-            $commandClient = 'ibv_rc_pingpong -d ' . $rdmaInfoClient[1] . ' -n 3 -g ' . $rdmaInfoClient[2] . ' ' . $rdmaInfoServer[3];
+        if($serverState and $clientState){
+            // Find the server host info
+            $hostMatchServer = $hostInfo->where('host_name', $serverInfo[0])->first()->toArray();
 
-            // Execute the server command
-            $sshClientServer->enablePTY();
-            $sshClientServer->exec($commandServer);
-            $sshClientServer->setTimeout(10);
-
-            // Execute the client command
-            $sshClientClient->enablePTY();
-            $sshClientClient->exec($commandClient);
-            $sshClientClient->setTimeout(10);
-
-            if ($sshClientServer->isTimeout() || $sshClientClient->isTimeout()) {
-                // If the commands have timed out, send a cancel signal
-                $sshClientServer->write("\x03");
-                $sshClientClient->write("\x03");
-            } else {
-                // Read the command result
-                $cmdRes = $sshClientClient->read();
-                $resultValid = stripos($cmdRes, "3 iters in");
-                if ($resultValid) {
-                    // Create a relation in the database if the result is valid
-                    $relationCreated = $rdmaTestRelation->create([
-                        "test_pair_id" => $data['test_pair_id'],
-                        "rdma_id_server" => $rdmaInfoServer[0],
-                        "rdma_id_client" => $rdmaInfoClient[0],
-                    ])->save();
-                    if ($relationCreated) {
-                        $jsonArr['opCode'] = true;
-                        $jsonArr['msg'] = 'Test Pair Connect Success';
-                    }
-                } else {
-                    $jsonArr['msg'] = 'Test Pair Connect fail, please check';
-                }
-                $jsonArr['result'] = $cmdRes;
+            if ($hostMatchServer) {
+                // Get SSH client for the server
+                $sshClientServer = getSSHClient($hostMatchServer);
+                $serverPrompt = is_string($sshClientServer) ? $sshClientServer : "OK";
             }
-        } else {
-            $jsonArr['result'] = 'Server: ' . $serverPrompt . ';;' . 'Client: ' . $clientPrompt;
+
+            // Find the client host info
+            $hostMatchClient = $hostInfo->where('host_name', $clientInfo[0])->first()->toArray();
+            if ($hostMatchClient) {
+                // Get SSH client for the client
+                $sshClientClient = getSSHClient($hostMatchClient);
+                $clientPrompt = is_string($sshClientClient) ? $sshClientClient : "OK";
+            }
+
+            if ($serverPrompt === "OK" && $clientPrompt === "OK") {
+                // server ibv_rc_pingpong -d mlx5_0 -g 3 
+                // client ibv_rc_pingpong -d pclr_0 -g 1 10.10.10.10
+                // Construct the server and client commands
+                $commandServer = 'ibv_rc_pingpong -d ' . $rdmaInfoServer[1] . ' -n 3 -g ' . $rdmaInfoServer[2];
+                $commandClient = 'ibv_rc_pingpong -d ' . $rdmaInfoClient[1] . ' -n 3 -g ' . $rdmaInfoClient[2] . ' ' . $rdmaInfoServer[3];
+
+                // Execute the server command
+                $sshClientServer->enablePTY();
+                $sshClientServer->exec($commandServer);
+                $sshClientServer->setTimeout(10);
+
+                // Execute the client command
+                $sshClientClient->enablePTY();
+                $sshClientClient->exec($commandClient);
+                $sshClientClient->setTimeout(10);
+
+                if ($sshClientServer->isTimeout() || $sshClientClient->isTimeout()) {
+                    // If the commands have timed out, send a cancel signal
+                    $sshClientServer->write("\x03");
+                    $sshClientClient->write("\x03");
+                } else {
+                    // Read the command result
+                    $cmdRes = $sshClientClient->read();
+                    $resultValid = stripos($cmdRes, "3 iters in");
+                    if ($resultValid) {
+                        // Create a relation in the database if the result is valid
+                        $relationCreated = $rdmaTestRelation->create([
+                            "test_pair_id" => $data['test_pair_id'],
+                            "rdma_id_server" => $rdmaInfoServer[0],
+                            "rdma_server_state" =>$serverState,
+                            "rdma_id_client" => $rdmaInfoClient[0],
+                            "rdma_client_state" => $clientState,
+                        ])->save();
+                        if ($relationCreated) {
+                            $jsonArr['opCode'] = true;
+                            $jsonArr['msg'] = 'Test Pair Connect Success';
+                        }
+                    } else {
+                        $jsonArr['msg'] = 'Test Pair Connect fail, please check';
+                    }
+                    $jsonArr['result'] = $cmdRes;
+                }
+            } else {
+                $jsonArr['result'] = 'Server: ' . $serverPrompt . ';;' . 'Client: ' . $clientPrompt;
+            }
+        }else{
+            $relationCreated = $rdmaTestRelation->create([
+                "test_pair_id" => $data['test_pair_id'],
+                "rdma_id_server" => $rdmaInfoServer[0],
+                "rdma_server_state" =>$serverState,
+                "rdma_id_client" => $rdmaInfoClient[0],
+                "rdma_client_state" => $clientState,
+            ])->save();
+            $jsonArr['opCode'] = true;
+            $jsonArr['msg'] = 'Test Pair Create Directly';
+            $jsonArr['result'] = 'Only Create record and no need test';
         }
         
         // Return the result array
@@ -165,6 +182,7 @@ class TestsController extends Controller
         $conPort = $data['conPort'];
         $directions = $data['directions'];
         $testQueue = $data['testQueue'];
+        $sourceNum = $data['sourceNum'];
 
         // Set flags based on selected test items
         $rdma_sendbw_flag = in_array('ib_send_bw', $testItems) ? 1 : 0;
@@ -203,6 +221,7 @@ class TestsController extends Controller
                     "rdma_id_server" => $test_relation[0]['rdma_id_server'],
                     "rdma_id_client" => $test_relation[0]['rdma_id_client'],
                     "test_queue" => $testQueue,
+                    "source_num" => $sourceNum,
                     "test_queue_state" => "0",
                     "rdma_sendbw_flag" => $rdma_sendbw_flag,
                     "rdma_readbw_flag" => $rdma_readbw_flag,
@@ -419,8 +438,8 @@ class TestsController extends Controller
         $records = $query->select([
             // Select specific columns from the query
             'test_identifier', 'test_pair_id', 'test_count_no', 'test_queue', 'test_queue_state',
-            'bidirection', 'test_qp_num', 'test_port_num','server_host_name', 'server_card_name', 'server_card_ipv4_addr',
-            'server_card_mac_addr', 'server_ifname', 'server_gid', 'client_host_name', 'client_card_name',
+            'bidirection', 'test_qp_num', 'test_port_num','source_num','rdma_server_state','server_host_name', 'server_card_name', 'server_card_ipv4_addr',
+            'server_card_mac_addr', 'server_ifname', 'server_gid', 'rdma_client_state','client_host_name', 'client_card_name',
             'client_card_ipv4_addr', 'client_card_mac_addr', 'client_ifname', 'client_gid', 'rdma_sendbw_flag',
             'rdma_sendbw_costtime', 'rdma_readbw_flag', 'rdma_readbw_costtime', 'rdma_writebw_flag',
             'rdma_writebw_costtime', 'rdma_atomicbw_flag', 'rdma_atomicbw_costtime', 'rdma_ethernetbw_flag',

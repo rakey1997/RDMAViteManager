@@ -3,12 +3,24 @@
     <el-form :model="form" label-width="100px">
         <el-form-item :label="$t('rdmaTest.testServer')">
             <el-cascader v-model="form.server" :options="menu_options" :props="props" clearable separator="-->"/>
+            <el-switch v-model="form.serverState" 
+                        style="margin-left: 20px;"
+                        inline-prompt
+                        :active-text="$t('rdmaTest.inside')"
+                        :inactive-text="$t('rdmaTest.outside')">
+            </el-switch>
         </el-form-item>
         <el-form-item :label="$t('rdmaTest.testClient')">
             <el-cascader v-model="form.client" :options="menu_options" :props="props" clearable separator="-->" />
+            <el-switch v-model="form.clientState" 
+                    style="margin-left: 20px;"
+                    inline-prompt
+                    :active-text="$t('rdmaTest.inside')"
+                    :inactive-text="$t('rdmaTest.outside')">
+            </el-switch> 
         </el-form-item>
         <el-form-item>
-            <el-button @click="checkTQ" :disabled="flag || (!form.client || !form.server)||(form.client.length == 0 || form.server.length == 0)">{{$t('rdmaTest.checkTQ')}}</el-button>
+            <el-button @click="checkTQ" :disabled="flag || (!form.client || !form.server)||(form.client.length == 0 || form.server.length == 0) || (!form.serverState && !form.clientState)">{{$t('rdmaTest.checkTQ')}}</el-button>
         </el-form-item>
     </el-form>
     <testDialog v-model="dialogVisible" 
@@ -59,6 +71,9 @@
                 <el-option label="Queue 12" value="Queue_12" />
             </el-select>
         </el-form-item>
+        <el-form-item :label="$t('rdmaTest.sourceNum')">
+            <el-input v-model.number="form.sourceNum" />
+        </el-form-item>
     </el-form>
     <el-transfer
         :titles="titles"
@@ -96,6 +111,9 @@
                 "testCount":1,
                 "qpNum":10,
                 "testQueue":"default",
+                "sourceNum":1,
+                "serverState":true,
+                "clientState":true
             }
             let toBeDelHostValue = []
             const sep=','
@@ -121,6 +139,9 @@
                     qpNum:10,
                     conPort:18515,
                     testQueue:"default",
+                    sourceNum:1,
+                    serverState:true,
+                    clientState:true
                     })
 
             const data=ref([
@@ -189,6 +210,8 @@
                 testForm.qpNum=form.qpNum
                 testForm.conPort=form.conPort
                 testForm.testQueue=form.testQueue
+                testForm.congestFlag=form.congestFlag
+                testForm.sourceNum=form.sourceNum
                 const res=await addTQ(testForm)
                 if(res.opCode){
                     ElMessage({

@@ -61,6 +61,18 @@ export const testOptions = [
         width: 100,
     },
     {
+        label: "source_num",
+        prop: "source_num",
+        sortable: true,
+        width: 100,
+    },
+    {
+        label: "rdma_server_state",
+        prop: "rdma_server_state",
+        sortable: true,
+        width: 100,
+    },
+    {
         label: "Server_Host_Name",
         prop: "server_host_name",
         width: 100,
@@ -94,6 +106,12 @@ export const testOptions = [
         prop: "server_gid",
         sortable: true,
         width: 90,
+    },
+    {
+        label: "rdma_client_state",
+        prop: "rdma_client_state",
+        sortable: true,
+        width: 100,
     },
     {
         label: "Client_Host_Name",
