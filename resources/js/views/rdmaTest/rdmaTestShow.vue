@@ -41,6 +41,15 @@
                 <template v-slot="{row}" v-else-if="op.prop==='bidirection'">
                     <div>{{`${row.bidirection=='2'?"unidirection":"bidirection"}`}}</div>
                 </template>
+                <template v-slot="{row}" v-else-if="op.prop==='statistic'">
+                    <div>{{`${row.statistic=='1'?"Y":"N"}`}}</div>
+                </template>
+                <template v-slot="{row}" v-else-if="op.prop==='msg_size'">
+                    <div>{{`${row.msg_size=='0'?"all":row.msg_size}`}}</div>
+                </template>
+                <template v-slot="{row}" v-else-if="op.prop==='rdma_cm'">
+                    <div>{{`${row.rdma_cm=='0'?"Socket":"RDMA CM"}`}}</div>
+                </template>
                 <template v-slot="{row}" v-else-if="op.prop.includes('flag')">
                     <div>{{`${row[op.prop]=='0'?"no need test":row[op.prop]=='1'?"wait starting":row[op.prop]=='2'?"testing":row[op.prop]=='3'?"success":"fail"}`}}</div>
                 </template>

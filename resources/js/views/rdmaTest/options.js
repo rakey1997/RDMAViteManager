@@ -12,6 +12,13 @@ export const testOptions = [
         width: 60,
     },
     {
+        label: "statistic",
+        prop: "statistic",
+        sortable: true,
+        fixed: true,
+        width: 80,
+    },
+    {
         label: "Test_Identifier",
         prop: "test_identifier",
         sortable: true,
@@ -57,6 +64,30 @@ export const testOptions = [
     {
         label: "test_port_num",
         prop: "test_port_num",
+        sortable: true,
+        width: 100,
+    },
+    {
+        label: "rdma_cm",
+        prop: "rdma_cm",
+        sortable: true,
+        width: 100,
+    },
+    {
+        label: "msg_size",
+        prop: "msg_size",
+        sortable: true,
+        width: 100,
+    },
+    {
+        label: "more_para",
+        prop: "more_para",
+        sortable: true,
+        width: 100,
+    },
+    {
+        label: "delay",
+        prop: "delay",
         sortable: true,
         width: 100,
     },
